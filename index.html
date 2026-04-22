@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CampusPrint — Remote Printing</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+  :root {
+    --ink: #0e0e0e;
+    --paper: #f5f2eb;
+    --card: #ffffff;
+    --accent: #1a6b3c;
+    --accent-light: #e8f5ee;
+    --accent-mid: #2d9e5f;
+    --muted: #6b6b6b;
+    --border: #ddd9cf;
+    --danger: #c0392b;
+    --warn-bg: #fff8e6;
+    --warn-border: #f0c040;
+    --mono: 'DM Mono', monospace;
+    --display: 'Syne', sans-serif;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--display);
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--ink);
+    color: #fff;
+    padding: 18px 20px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo span { color: var(--accent-mid); }
+  .logo-sub { font-size: 10px; font-family: var(--mono); color: #999; margin-top: 1px; }
+  .header-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    background: var(--accent);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  /* PROGRESS BAR */
+  .progress-wrap {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+  }
+  .progress-steps {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+  }
+  .p-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+  }
+  .p-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+  }
+  .p-dot.active { background: var(--accent); color: #fff; }
+  .p-dot.done { background: var(--ink); color: #fff; }
+  .p-label { font-size: 9px; font-family: var(--mono); color: var(--muted); text-align: center; }
+  .p-line { height: 2px; width: 20px; background: var(--border); flex-shrink: 0; margin-bottom: 14px; transition: background 0.3s; }
+  .p-line.done { background: var(--ink); }
+
+  /* MAIN */
+  main { padding: 20px 16px 0; max-width: 480px; margin: 0 auto; }
+
+  /* PRICE BANNER */
+  .price-banner {
+    background: var(--accent);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .price-icon { font-size: 24px; }
+  .price-text { flex: 1; }
+  .price-text strong { font-size: 15px; font-weight: 700; display: block; }
+  .price-text span { font-size: 12px; font-family: var(--mono); opacity: 0.85; }
+
+  /* SECTION */
+  .section {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 18px;
+    margin-bottom: 14px;
+    display: none;
+    animation: fadeUp 0.3s ease;
+  }
+  .section.visible { display: block; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::before {
+    content: '';
+    display: block;
+    width: 3px;
+    height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* FORM ELEMENTS */
+  label { font-size: 13px; font-weight: 600; color: var(--ink); display: block; margin-bottom: 6px; margin-top: 14px; }
+  label:first-child { margin-top: 0; }
+
+  select, input[type="email"], input[type="tel"], input[type="text"] {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: var(--display);
+    font-size: 14px;
+    color: var(--ink);
+    background: #fff;
+    appearance: none;
+    -webkit-appearance: none;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b6b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+  select:focus, input:focus { border-color: var(--accent); }
+
+  /* COPIES STEPPER */
+  .copies-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 6px;
+  }
+  .stepper-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: #fff;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--ink);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .stepper-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .stepper-btn:active { transform: scale(0.95); }
+  .copies-display {
+    flex: 1;
+    text-align: center;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--ink);
+    font-family: var(--mono);
+  }
+  .copies-sub { font-size: 11px; font-family: var(--mono); color: var(--muted); text-align: center; margin-top: 4px; }
+
+  /* TOGGLE BUTTONS */
+  .toggle-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .toggle-btn {
+    padding: 10px 8px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: #fff;
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .toggle-btn.selected {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+
+  .quick-btn {
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .quick-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+  /* FILE UPLOAD */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: 20px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fafaf8;
+    margin-top: 6px;
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: var(--accent-light); }
+  .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 28px; margin-bottom: 6px; }
+  .upload-main { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .upload-sub { font-size: 11px; font-family: var(--mono); color: var(--muted); margin-top: 4px; line-height: 1.5; }
+  .upload-success {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: var(--accent-light);
+    border: 1.5px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    margin-top: 8px;
+  }
+  .upload-success.show { display: flex; }
+  .upload-success .file-icon { font-size: 20px; flex-shrink: 0; }
+  .upload-success .file-info { flex: 1; }
+  .upload-success .file-name { font-size: 13px; font-weight: 600; color: var(--accent); word-break: break-all; }
+  .upload-success .file-size { font-size: 11px; font-family: var(--mono); color: var(--muted); }
+  .upload-remove { font-size: 18px; color: var(--muted); cursor: pointer; padding: 4px; flex-shrink: 0; }
+  .upload-remove:hover { color: var(--danger); }
+
+  /* PRICE TABLE */
+  .price-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+  .price-table th { font-size: 10px; font-family: var(--mono); color: var(--muted); text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); font-weight: 500; }
+  .price-table td { padding: 7px 8px; border-bottom: 1px solid var(--border); color: var(--ink); }
+  .price-table tr:last-child td { border-bottom: none; }
+  .price-table tr.active-row td { background: var(--accent-light); color: var(--accent); font-weight: 600; }
+  .price-table .rate { font-family: var(--mono); font-weight: 600; }
+
+  /* PAYMENT OPTIONS */
+  .payment-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .pay-btn {
+    padding: 12px 6px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: #fff;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .pay-btn .pay-name { font-size: 13px; font-weight: 700; color: var(--ink); display: block; margin-bottom: 2px; }
+  .pay-btn .pay-sub { font-size: 10px; font-family: var(--mono); color: var(--muted); }
+  .pay-btn.selected { border-color: var(--accent); background: var(--accent-light); }
+  .pay-btn.selected .pay-name { color: var(--accent); }
+  .eco { border-top: 3px solid #4caf50; }
+  .inn { border-top: 3px solid #e65100; }
+  .vis { border-top: 3px solid #1a237e; }
+
+  /* COST SUMMARY */
+  .cost-box {
+    background: var(--accent-light);
+    border: 1px solid #b2dfce;
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .cost-label { font-size: 13px; color: var(--accent); font-weight: 600; }
+  .cost-amount { font-size: 22px; font-weight: 800; font-family: var(--mono); color: var(--accent); }
+
+  /* T&C */
+  .tc-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 6px;
+    padding: 12px;
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    border-radius: var(--radius-sm);
+  }
+  .tc-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .tc-text { font-size: 12px; line-height: 1.5; color: var(--ink); }
+  .tc-text a { color: var(--accent); text-decoration: underline; cursor: pointer; }
+
+  /* BUTTONS */
+  .btn-primary {
+    width: 100%;
+    padding: 15px;
+    background: var(--ink);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--display);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+    letter-spacing: 0.02em;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-primary:hover { background: var(--accent); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; }
+
+  .btn-outline {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: var(--ink);
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s;
+  }
+  .btn-outline:hover { background: var(--ink); color: #fff; }
+
+  /* ERROR */
+  .error-msg {
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--danger);
+    margin-top: 6px;
+    display: none;
+    padding: 8px 12px;
+    background: #fdf0ee;
+    border-radius: var(--radius-sm);
+    border: 1px solid #f5c6c1;
+  }
+  .error-msg.show { display: block; }
+
+  /* RECEIPT */
+  #receipt-screen { display: none; }
+  #receipt-screen.visible { display: block; }
+
+  .receipt-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 2px solid var(--ink);
+    overflow: hidden;
+    margin-bottom: 14px;
+    animation: fadeUp 0.4s ease;
+  }
+  .receipt-header {
+    background: var(--ink);
+    color: #fff;
+    padding: 18px 20px;
+    text-align: center;
+  }
+  .receipt-header .check {
+    width: 48px;
+    height: 48px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    margin: 0 auto 10px;
+  }
+  .receipt-header h2 { font-size: 20px; font-weight: 800; }
+  .receipt-header p { font-size: 12px; font-family: var(--mono); color: #aaa; margin-top: 4px; }
+
+  .receipt-body { padding: 18px 20px; }
+  .job-number {
+    text-align: center;
+    padding: 16px;
+    background: var(--accent-light);
+    border-radius: var(--radius-sm);
+    margin-bottom: 16px;
+    border: 1px dashed var(--accent);
+  }
+  .job-number .jn-label { font-size: 11px; font-family: var(--mono); color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; }
+  .job-number .jn-code { font-size: 32px; font-weight: 800; font-family: var(--mono); color: var(--accent); letter-spacing: 2px; margin-top: 4px; }
+  .job-number .jn-hint { font-size: 11px; font-family: var(--mono); color: var(--muted); margin-top: 4px; }
+
+  .receipt-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    gap: 12px;
+  }
+  .receipt-row:last-child { border-bottom: none; }
+  .r-label { color: var(--muted); font-family: var(--mono); font-size: 11px; flex-shrink: 0; }
+  .r-value { font-weight: 600; text-align: right; }
+  .r-value.green { color: var(--accent); }
+
+  .receipt-divider {
+    border: none;
+    border-top: 2px dashed var(--border);
+    margin: 14px 0;
+  }
+
+  .show-receipt-btn { margin-top: 4px; }
+
+  /* FOOTER NOTE */
+  .footer-note {
+    text-align: center;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+    padding: 20px 16px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">Campus<span>Print</span></div>
+    <div class="logo-sub">Remote printing · Campus kiosks</div>
+  </div>
+  <div class="header-badge">ONLINE</div>
+</header>
+
+<div class="progress-wrap" id="progress-wrap">
+  <div class="progress-steps">
+    <div class="p-step">
+      <div class="p-dot active" id="pd1">1</div>
+      <div class="p-label">Print Job</div>
+    </div>
+    <div class="p-line" id="pl1"></div>
+    <div class="p-step">
+      <div class="p-dot" id="pd2">2</div>
+      <div class="p-label">Contact</div>
+    </div>
+    <div class="p-line" id="pl2"></div>
+    <div class="p-step">
+      <div class="p-dot" id="pd3">3</div>
+      <div class="p-label">Payment</div>
+    </div>
+    <div class="p-line" id="pl3"></div>
+    <div class="p-step">
+      <div class="p-dot" id="pd4">4</div>
+      <div class="p-label">Receipt</div>
+    </div>
+  </div>
+</div>
+
+<main>
+
+  <!-- PRICE BANNER -->
+  <div class="price-banner">
+    <div class="price-icon">🖨</div>
+    <div class="price-text">
+      <strong id="banner-rate">$1.00 per 10 copies — A4 Standard</strong>
+      <span>Min: 2 copies · Max: 400 copies · All kiosks</span>
+    </div>
+  </div>
+
+  <!-- STEP 1: PRINT JOB -->
+  <div class="section visible" id="step1">
+    <div class="section-title">Print job details</div>
+
+    <label for="location">Kiosk location</label>
+    <select id="location">
+      <option value="">— Select hostel kiosk —</option>
+      <option value="Manfed Hostel Kiosk">Manfed Hostel Kiosk</option>
+      <option value="Swinton Hostel Kiosk">Swinton Hostel Kiosk</option>
+      <option value="NC3 Hostel Kiosk">NC3 Hostel Kiosk</option>
+      <option value="NC5 Hostel Kiosk">NC5 Hostel Kiosk</option>
+    </select>
+
+    <label>Number of copies</label>
+    <div class="copies-row">
+      <button class="stepper-btn" onmousedown="startHold(-1)" onmouseup="stopHold()" onmouseleave="stopHold()" ontouchstart="startHold(-1)" ontouchend="stopHold()">−</button>
+      <div style="flex:1;text-align:center">
+        <input type="number" id="copies-input" min="2" max="400" value="2"
+          style="width:100%;text-align:center;font-size:28px;font-weight:800;font-family:var(--mono);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:6px 4px;background:#fff;color:var(--ink);outline:none;"
+          oninput="onCopiesInput(this)" onblur="onCopiesBlur(this)">
+        <div class="copies-sub" style="margin-top:4px">copies · min 2, max 400</div>
+      </div>
+      <button class="stepper-btn" onmousedown="startHold(1)" onmouseup="stopHold()" onmouseleave="stopHold()" ontouchstart="startHold(1)" ontouchend="stopHold()">+</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      <span style="font-size:11px;font-family:var(--mono);color:var(--muted);margin-top:2px">Quick set:</span>
+      <button onclick="setCopies(10)" class="quick-btn">10</button>
+      <button onclick="setCopies(20)" class="quick-btn">20</button>
+      <button onclick="setCopies(50)" class="quick-btn">50</button>
+      <button onclick="setCopies(100)" class="quick-btn">100</button>
+      <button onclick="setCopies(200)" class="quick-btn">200</button>
+      <button onclick="setCopies(400)" class="quick-btn">400</button>
+    </div>
+
+    <label>Paper type</label>
+    <div class="toggle-group">
+      <button class="toggle-btn selected" onclick="selectPaper(this, 'A4 Standard', 1.00)">A4 Standard</button>
+      <button class="toggle-btn" onclick="selectPaper(this, 'A4 Glossy', 1.80)">A4 Glossy</button>
+      <button class="toggle-btn" onclick="selectPaper(this, 'A3 Standard', 2.00)">A3 Standard</button>
+      <button class="toggle-btn" onclick="selectPaper(this, 'Legal Size', 1.50)">Legal Size</button>
+    </div>
+
+    <table class="price-table" id="price-table">
+      <thead>
+        <tr>
+          <th>Paper type</th>
+          <th>Rate per 10 copies</th>
+          <th>Your cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="active-row" id="ptr-a4s"><td>A4 Standard</td><td class="rate">$1.00</td><td class="rate" id="ptc-a4s">—</td></tr>
+        <tr id="ptr-a4g"><td>A4 Glossy</td><td class="rate">$1.80</td><td class="rate" id="ptc-a4g">—</td></tr>
+        <tr id="ptr-a3s"><td>A3 Standard</td><td class="rate">$2.00</td><td class="rate" id="ptc-a3s">—</td></tr>
+        <tr id="ptr-leg"><td>Legal Size</td><td class="rate">$1.50</td><td class="rate" id="ptc-leg">—</td></tr>
+      </tbody>
+    </table>
+
+    <label>Print sides</label>
+    <div class="toggle-group">
+      <button class="toggle-btn selected" onclick="selectToggle(this, 'sides')">Single sided</button>
+      <button class="toggle-btn" onclick="selectToggle(this, 'sides')">Double sided</button>
+    </div>
+
+    <label>Upload document or image</label>
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="file-input" accept=".doc,.docx,.xls,.xlsx,.ppt,.pptx,.pdf,.txt,.rtf,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp" onchange="handleFile(this)">
+      <div class="upload-icon">📎</div>
+      <div class="upload-main">Tap to upload your file</div>
+      <div class="upload-sub">.doc .docx .xls .xlsx .ppt .pptx .pdf .txt .rtf<br>.jpg .jpeg .png .gif .bmp .tiff .webp</div>
+    </div>
+    <div class="upload-success" id="upload-success">
+      <span class="file-icon" id="file-icon">📄</span>
+      <div class="file-info">
+        <div class="file-name" id="file-name"></div>
+        <div class="file-size" id="file-size"></div>
+      </div>
+      <span class="upload-remove" onclick="removeFile()" title="Remove file">✕</span>
+    </div>
+
+    <div class="cost-box">
+      <span class="cost-label">Estimated total</span>
+      <span class="cost-amount" id="cost-display">$0.20</span>
+    </div>
+
+    <div class="error-msg" id="err1">Please select a kiosk location and upload a file.</div>
+    <button class="btn-primary" onclick="goStep(2)">Continue to contact info →</button>
+  </div>
+
+  <!-- STEP 2: CONTACT -->
+  <div class="section" id="step2">
+    <div class="section-title">Your contact details</div>
+
+    <label for="student-id">Student ID number</label>
+    <input type="text" id="student-id" placeholder="e.g. R123456Y">
+
+    <label for="email">Email address</label>
+    <input type="email" id="email" placeholder="you@example.com">
+
+    <label for="phone">Phone number</label>
+    <input type="tel" id="phone" placeholder="07X XXX XXXX">
+
+    <div class="error-msg" id="err2">Please enter your student ID, a valid email and phone number.</div>
+    <button class="btn-primary" onclick="goStep(3)">Continue to payment →</button>
+    <button class="btn-outline" onclick="goStep(1)">← Back</button>
+  </div>
+
+  <!-- STEP 3: PAYMENT -->
+  <div class="section" id="step3">
+    <div class="section-title">Payment</div>
+
+    <label>Choose payment platform</label>
+    <div class="payment-grid">
+      <button class="pay-btn eco" onclick="selectPay(this, 'EcoCash')">
+        <span class="pay-name">EcoCash</span>
+        <span class="pay-sub">Mobile money</span>
+      </button>
+      <button class="pay-btn inn" onclick="selectPay(this, 'InnBucks')">
+        <span class="pay-name">InnBucks</span>
+        <span class="pay-sub">Mobile money</span>
+      </button>
+      <button class="pay-btn vis" onclick="selectPay(this, 'Visa')">
+        <span class="pay-name">Visa</span>
+        <span class="pay-sub">Card payment</span>
+      </button>
+    </div>
+
+    <div class="cost-box" style="margin-top:16px">
+      <div style="flex:1">
+        <span class="cost-label">Total to pay</span>
+        <div style="font-size:11px;font-family:var(--mono);color:#1a6b3c;margin-top:3px" id="per-copy-rate"></div>
+      </div>
+      <span class="cost-amount" id="cost-display2">$0.20</span>
+    </div>
+
+    <div class="tc-row" style="margin-top:14px">
+      <input type="checkbox" id="tc-check">
+      <div class="tc-text">I agree to the <a onclick="alert('T&C: Prints are non-refundable once confirmed. You must collect your printout within 2 hours of confirmation. CampusPrint is not liable for files not compatible with the printer.')">Terms & Conditions</a>. I confirm my print job details are correct and payment will be processed immediately upon checkout.</div>
+    </div>
+
+    <div class="error-msg" id="err3">Please select a payment platform and accept the Terms & Conditions.</div>
+    <button class="btn-primary" id="checkout-btn" onclick="checkout()">
+      <span>Checkout & Confirm Print</span>
+      <span>→</span>
+    </button>
+    <button class="btn-outline" onclick="goStep(2)">← Back</button>
+  </div>
+
+</main>
+
+<!-- RECEIPT SCREEN -->
+<div id="receipt-screen">
+  <main>
+    <div class="receipt-card">
+      <div class="receipt-header">
+        <div class="check">✓</div>
+        <h2>Print Confirmed!</h2>
+        <p id="receipt-time"></p>
+      </div>
+      <div class="receipt-body">
+        <div class="job-number">
+          <div class="jn-label">Print job number</div>
+          <div class="jn-code" id="job-number"></div>
+          <div class="jn-hint">Show this at the kiosk to collect your prints</div>
+        </div>
+
+        <div class="receipt-row">
+          <span class="r-label">STUDENT ID</span>
+          <span class="r-value" id="r-studentid"></span>
+        </div>
+        <div class="receipt-row">
+          <span class="r-label">FILE</span>
+          <span class="r-value" id="r-file"></span>
+        </div>
+        <div class="receipt-row">
+          <span class="r-label">KIOSK LOCATION</span>
+          <span class="r-value" id="r-location"></span>
+        </div>
+        <div class="receipt-row">
+          <span class="r-label">COPIES</span>
+          <span class="r-value" id="r-copies"></span>
+        </div>
+        <div class="receipt-row">
+          <span class="r-label">PAPER TYPE</span>
+          <span class="r-value" id="r-paper"></span>
+        </div>
+        <div class="receipt-row">
+          <span class="r-label">PRINT SIDES</span>
+          <span class="r-value" id="r-sides"></span>
+        </div>
+        <div class="receipt-row">
+          <span class="r-label">STATUS</span>
+          <span class="r-value green" id="r-status">✓ Sent to printer</span>
+        </div>
+
+        <hr class="receipt-divider">
+
+        <div class="receipt-row">
+          <span class="r-label">EMAIL</span>
+          <span class="r-value" id="r-email"></span>
+        </div>
+        <div class="receipt-row">
+          <span class="r-label">PHONE</span>
+          <span class="r-value" id="r-phone"></span>
+        </div>
+        <div class="receipt-row">
+          <span class="r-label">PAYMENT</span>
+          <span class="r-value" id="r-payment"></span>
+        </div>
+        <div class="receipt-row">
+          <span class="r-label">AMOUNT PAID</span>
+          <span class="r-value green" id="r-amount"></span>
+        </div>
+        <div class="receipt-row">
+          <span class="r-label">PRINT TIME</span>
+          <span class="r-value" id="r-printtime"></span>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="window.print()">Save / Print Receipt</button>
+    <button class="btn-outline" onclick="resetApp()">Start new print job</button>
+  </main>
+</div>
+
+<div class="footer-note">CampusPrint · Campus kiosk printing service · Collect within 2 hours of confirmation</div>
+
+<script>
+  /* ============================================================
+     EMAILJS CONFIGURATION — fill these in after setup
+     Step 1: Sign up free at https://emailjs.com
+     Step 2: Add a new Email Service (Gmail works great)
+     Step 3: Create an Email Template (see template guide below)
+     Step 4: Paste your keys here
+  ============================================================ */
+  const EMAILJS_CONFIG = {
+    publicKey:   'y8Iqe85xy4NgT062R',       // Account → API Keys
+    serviceId:   'service_qw3q7tr',       // Email Services → Service ID
+    templateId:  'template_t2dat6h',      // Email Templates → Template ID
+    operatorEmail: 'kudakwashe.dzvairo4@gmail.com' // Where print jobs get sent
+  };
+  /* ============================================================
+     EMAIL TEMPLATE GUIDE
+     In your EmailJS template, use these variables:
+     {{job_number}}      — print job code
+     {{kiosk_location}}  — hostel kiosk name
+     {{student_id}}      — student ID
+     {{student_email}}   — student email
+     {{student_phone}}   — student phone
+     {{copies}}          — number of copies
+     {{paper_type}}      — paper type
+     {{print_sides}}     — single/double sided
+     {{payment_method}}  — EcoCash / InnBucks / Visa
+     {{amount_paid}}     — total charged
+     {{file_name}}       — uploaded file name
+     {{print_time}}      — date and time of order
+     {{collect_by}}      — collection deadline
+     {{to_email}}        — operator email (auto-filled)
+  ============================================================ */
+
+  emailjs.init(EMAILJS_CONFIG.publicKey);
+
+  let copies = 2;
+  let selectedPaper = 'A4 Standard';
+  let paperRate = 1.00;
+  let selectedSides = 'Single sided';
+  let selectedPayment = '';
+  let currentStep = 1;
+  let uploadedFile = null;
+  let holdTimer = null;
+  let holdInterval = null;
+
+  const paperRates = {
+    'A4 Standard': 1.00,
+    'A4 Glossy': 1.80,
+    'A3 Standard': 2.00,
+    'Legal Size': 1.50
+  };
+  const paperTableIds = {
+    'A4 Standard': 'a4s',
+    'A4 Glossy': 'a4g',
+    'A3 Standard': 'a3s',
+    'Legal Size': 'leg'
+  };
+  const fileIcons = {
+    doc: '📝', docx: '📝', xls: '📊', xlsx: '📊',
+    ppt: '📊', pptx: '📊', pdf: '📕', txt: '📄', rtf: '📄',
+    jpg: '🖼', jpeg: '🖼', png: '🖼', gif: '🖼', bmp: '🖼', tiff: '🖼', webp: '🖼'
+  };
+
+  function setCopies(n) {
+    copies = Math.min(400, Math.max(2, n));
+    document.getElementById('copies-input').value = copies;
+    updateCost();
+  }
+
+  function changeCopies(delta) { setCopies(copies + delta); }
+
+  function onCopiesInput(input) {
+    const val = parseInt(input.value);
+    if (!isNaN(val)) { copies = Math.min(400, Math.max(2, val)); updateCost(); }
+  }
+
+  function onCopiesBlur(input) {
+    const val = parseInt(input.value);
+    copies = isNaN(val) ? 2 : Math.min(400, Math.max(2, val));
+    input.value = copies;
+    updateCost();
+  }
+
+  function startHold(delta) {
+    changeCopies(delta);
+    holdTimer = setTimeout(() => {
+      holdInterval = setInterval(() => changeCopies(delta), 80);
+    }, 400);
+  }
+
+  function stopHold() {
+    clearTimeout(holdTimer);
+    clearInterval(holdInterval);
+  }
+
+  function calcCost() {
+    return copies * (paperRate / 10);
+  }
+
+  function formatCost(amount) {
+    if (amount < 1) return (amount * 100).toFixed(0) + 'c';
+    return '$' + amount.toFixed(2);
+  }
+
+  function updateCost() {
+    const cost = calcCost();
+    const perCopy = paperRate / 10;
+    const display = formatCost(cost);
+    const el1 = document.getElementById('cost-display');
+    const el2 = document.getElementById('cost-display2');
+    const el3 = document.getElementById('per-copy-rate');
+    if (el1) el1.textContent = display;
+    if (el2) el2.textContent = display;
+    if (el3) el3.textContent = copies + ' copies × ' + formatCost(perCopy) + ' each';
+    document.getElementById('banner-rate').textContent = '$' + paperRate.toFixed(2) + ' per 10 copies — ' + selectedPaper + ' (' + formatCost(perCopy) + '/copy)';
+    updatePriceTable();
+  }
+
+  function updatePriceTable() {
+    Object.keys(paperRates).forEach(name => {
+      const id = paperTableIds[name];
+      const row = document.getElementById('ptr-' + id);
+      const cell = document.getElementById('ptc-' + id);
+      const cost = copies * (paperRates[name] / 10);
+      cell.textContent = formatCost(cost);
+      row.classList.toggle('active-row', name === selectedPaper);
+    });
+  }
+
+  function selectPaper(btn, name, rate) {
+    btn.parentElement.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedPaper = name;
+    paperRate = rate;
+    updateCost();
+  }
+
+  function selectToggle(btn, group) {
+    btn.parentElement.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    if (group === 'sides') selectedSides = btn.textContent;
+  }
+
+  function selectPay(btn, name) {
+    document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedPayment = name;
+  }
+
+  function handleFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+    const allowed = ['doc','docx','xls','xlsx','ppt','pptx','pdf','txt','rtf','jpg','jpeg','png','gif','bmp','tiff','webp'];
+    if (!allowed.includes(ext)) {
+      alert('File type not supported. Please upload a Microsoft 365 document or a standard image file.');
+      input.value = '';
+      return;
+    }
+    uploadedFile = file;
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+    document.getElementById('file-name').textContent = file.name;
+    document.getElementById('file-size').textContent = sizeMB + ' MB · ' + ext.toUpperCase();
+    document.getElementById('file-icon').textContent = fileIcons[ext] || '📄';
+    document.getElementById('upload-success').classList.add('show');
+    document.getElementById('upload-zone').style.display = 'none';
+  }
+
+  function removeFile() {
+    uploadedFile = null;
+    document.getElementById('file-input').value = '';
+    document.getElementById('upload-success').classList.remove('show');
+    document.getElementById('upload-zone').style.display = 'block';
+  }
+
+  function showError(id, show) {
+    document.getElementById(id).classList.toggle('show', show);
+  }
+
+  function goStep(step) {
+    if (step === 2) {
+      const loc = document.getElementById('location').value;
+      if (!loc || !uploadedFile) { showError('err1', true); return; }
+      showError('err1', false);
+    }
+    if (step === 3) {
+      const sid = document.getElementById('student-id').value.trim();
+      const email = document.getElementById('email').value;
+      const phone = document.getElementById('phone').value;
+      if (!sid || !email.includes('@') || phone.length < 9) { showError('err2', true); return; }
+      showError('err2', false);
+    }
+    currentStep = step;
+    if (step === 3) updateCost();
+    ['step1','step2','step3'].forEach((id, i) => {
+      document.getElementById(id).classList.toggle('visible', i + 1 === step);
+    });
+    for (let i = 1; i <= 4; i++) {
+      const dot = document.getElementById('pd' + i);
+      dot.classList.toggle('active', i === step);
+      dot.classList.toggle('done', i < step);
+    }
+    for (let i = 1; i <= 3; i++) {
+      document.getElementById('pl' + i).classList.toggle('done', i < step);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function generateJobNumber() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let job = 'CP-';
+    for (let i = 0; i < 6; i++) job += chars[Math.floor(Math.random() * chars.length)];
+    return job;
+  }
+
+  async function sendEmailNotification(jobData) {
+    if (EMAILJS_CONFIG.publicKey === 'YOUR_PUBLIC_KEY') {
+      console.warn('EmailJS not configured — skipping email. Fill in EMAILJS_CONFIG to enable.');
+      return { skipped: true };
+    }
+    const params = {
+      to_email:       EMAILJS_CONFIG.operatorEmail,
+      job_number:     jobData.jobNum,
+      kiosk_location: jobData.location,
+      student_id:     jobData.studentId,
+      student_email:  jobData.email,
+      student_phone:  jobData.phone,
+      copies:         jobData.copies + ' copies',
+      paper_type:     jobData.paper,
+      print_sides:    jobData.sides,
+      payment_method: jobData.payment,
+      amount_paid:    jobData.amount,
+      file_name:      jobData.fileName,
+      print_time:     jobData.dateTime,
+      collect_by:     jobData.collectBy
+    };
+    return emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, params);
+  }
+
+  async function checkout() {
+    if (!selectedPayment || !document.getElementById('tc-check').checked) {
+      showError('err3', true); return;
+    }
+    showError('err3', false);
+
+    const btn = document.getElementById('checkout-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span>Sending print job...</span><span style="animation:spin 1s linear infinite;display:inline-block">⟳</span>';
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = now.toLocaleDateString('en-ZW', { day: 'numeric', month: 'short', year: 'numeric' });
+    const fullDateTime = dateStr + ' at ' + timeStr;
+    const collectBy = new Date(now.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
+    const jobNum = generateJobNumber();
+    const cost = formatCost(calcCost());
+    const location = document.getElementById('location').value;
+    const studentId = document.getElementById('student-id').value.trim();
+    const email = document.getElementById('email').value;
+    const phone = document.getElementById('phone').value;
+    const fileName = uploadedFile ? uploadedFile.name : '—';
+
+    const jobData = {
+      jobNum, location, studentId, email, phone,
+      copies, paper: selectedPaper, sides: selectedSides,
+      payment: selectedPayment, amount: cost,
+      fileName, dateTime: fullDateTime, collectBy
+    };
+
+    try {
+      const result = await sendEmailNotification(jobData);
+      if (result && result.skipped) {
+        console.log('Email skipped — EmailJS not yet configured.');
+      }
+    } catch (err) {
+      console.error('Email failed:', err);
+    }
+
+    document.getElementById('receipt-time').textContent = 'Submitted ' + fullDateTime;
+    document.getElementById('job-number').textContent = jobNum;
+    document.getElementById('r-studentid').textContent = studentId;
+    document.getElementById('r-file').textContent = fileName;
+    document.getElementById('r-location').textContent = location;
+    document.getElementById('r-copies').textContent = copies + ' copies';
+    document.getElementById('r-paper').textContent = selectedPaper;
+    document.getElementById('r-sides').textContent = selectedSides;
+    document.getElementById('r-email').textContent = email;
+    document.getElementById('r-phone').textContent = phone;
+    document.getElementById('r-payment').textContent = selectedPayment + ' · PAID';
+    document.getElementById('r-amount').textContent = cost;
+    document.getElementById('r-printtime').textContent = fullDateTime + ' · Collect by ' + collectBy;
+
+    document.getElementById('pd4').classList.remove('active');
+    document.getElementById('pd4').classList.add('done');
+    document.getElementById('pl3').classList.add('done');
+
+    btn.disabled = false;
+    btn.innerHTML = '<span>Checkout & Confirm Print</span><span>→</span>';
+
+    ['step1','step2','step3'].forEach(id => document.getElementById(id).classList.remove('visible'));
+    document.getElementById('receipt-screen').classList.add('visible');
+    document.getElementById('progress-wrap').style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetApp() {
+    copies = 2; selectedPaper = 'A4 Standard'; paperRate = 1.00;
+    selectedSides = 'Single sided'; selectedPayment = ''; uploadedFile = null;
+    document.getElementById('location').value = '';
+    document.getElementById('copies-input').value = '2';
+    document.getElementById('student-id').value = '';
+    document.getElementById('email').value = '';
+    document.getElementById('phone').value = '';
+    document.getElementById('tc-check').checked = false;
+    document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.toggle-group').forEach(g => {
+      const first = g.querySelector('.toggle-btn');
+      if (first) first.classList.add('selected');
+    });
+    removeFile();
+    updateCost();
+    document.getElementById('receipt-screen').classList.remove('visible');
+    document.getElementById('progress-wrap').style.display = 'block';
+    for (let i = 1; i <= 4; i++) {
+      const dot = document.getElementById('pd' + i);
+      dot.classList.remove('active', 'done');
+      if (i === 1) dot.classList.add('active');
+    }
+    for (let i = 1; i <= 3; i++) document.getElementById('pl' + i).classList.remove('done');
+    document.getElementById('step1').classList.add('visible');
+    document.getElementById('step2').classList.remove('visible');
+    document.getElementById('step3').classList.remove('visible');
+    currentStep = 1;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  updateCost();
+</script>
+</body>
+</html>
