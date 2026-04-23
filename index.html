@@ -6,483 +6,122 @@
 <title>CampusPrint — Remote Printing</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --ink: #0e0e0e;
-    --paper: #f5f2eb;
-    --card: #ffffff;
-    --accent: #1a6b3c;
-    --accent-light: #e8f5ee;
-    --accent-mid: #2d9e5f;
-    --muted: #6b6b6b;
-    --border: #ddd9cf;
-    --danger: #c0392b;
-    --warn-bg: #fff8e6;
-    --warn-border: #f0c040;
-    --mono: 'DM Mono', monospace;
-    --display: 'Syne', sans-serif;
-    --radius: 12px;
-    --radius-sm: 8px;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--paper);
-    color: var(--ink);
-    font-family: var(--display);
-    min-height: 100vh;
-    padding-bottom: 60px;
-  }
-
-  /* HEADER */
-  header {
-    background: var(--ink);
-    color: #fff;
-    padding: 18px 20px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .logo { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
-  .logo span { color: var(--accent-mid); }
-  .logo-sub { font-size: 10px; font-family: var(--mono); color: #999; margin-top: 1px; }
-  .header-badge {
-    font-family: var(--mono);
-    font-size: 10px;
-    background: var(--accent);
-    color: #fff;
-    padding: 4px 10px;
-    border-radius: 20px;
-  }
-
-  /* PROGRESS BAR */
-  .progress-wrap {
-    background: #fff;
-    border-bottom: 1px solid var(--border);
-    padding: 12px 20px;
-  }
-  .progress-steps {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    justify-content: center;
-  }
-  .p-step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    flex: 1;
-  }
-  .p-dot {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: var(--border);
-    color: var(--muted);
-    font-size: 12px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s;
-  }
-  .p-dot.active { background: var(--accent); color: #fff; }
-  .p-dot.done { background: var(--ink); color: #fff; }
-  .p-label { font-size: 9px; font-family: var(--mono); color: var(--muted); text-align: center; }
-  .p-line { height: 2px; width: 20px; background: var(--border); flex-shrink: 0; margin-bottom: 14px; transition: background 0.3s; }
-  .p-line.done { background: var(--ink); }
-
-  /* MAIN */
-  main { padding: 20px 16px 0; max-width: 480px; margin: 0 auto; }
-
-  /* PRICE BANNER */
-  .price-banner {
-    background: var(--accent);
-    color: #fff;
-    border-radius: var(--radius);
-    padding: 14px 18px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .price-icon { font-size: 24px; }
-  .price-text { flex: 1; }
-  .price-text strong { font-size: 15px; font-weight: 700; display: block; }
-  .price-text span { font-size: 12px; font-family: var(--mono); opacity: 0.85; }
-
-  /* SECTION */
-  .section {
-    background: var(--card);
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    padding: 18px;
-    margin-bottom: 14px;
-    display: none;
-    animation: fadeUp 0.3s ease;
-  }
-  .section.visible { display: block; }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  .section-title {
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .section-title::before {
-    content: '';
-    display: block;
-    width: 3px;
-    height: 14px;
-    background: var(--accent);
-    border-radius: 2px;
-  }
-
-  /* FORM ELEMENTS */
-  label { font-size: 13px; font-weight: 600; color: var(--ink); display: block; margin-bottom: 6px; margin-top: 14px; }
-  label:first-child { margin-top: 0; }
-
-  select, input[type="email"], input[type="tel"], input[type="text"] {
-    width: 100%;
-    padding: 11px 14px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-family: var(--display);
-    font-size: 14px;
-    color: var(--ink);
-    background: #fff;
-    appearance: none;
-    -webkit-appearance: none;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b6b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
-  select:focus, input:focus { border-color: var(--accent); }
-
-  /* COPIES STEPPER */
-  .copies-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 6px;
-  }
-  .stepper-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-sm);
-    border: 1.5px solid var(--border);
-    background: #fff;
-    font-size: 20px;
-    font-weight: 500;
-    color: var(--ink);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
-    flex-shrink: 0;
-  }
-  .stepper-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .stepper-btn:active { transform: scale(0.95); }
-  .copies-display {
-    flex: 1;
-    text-align: center;
-    font-size: 28px;
-    font-weight: 800;
-    color: var(--ink);
-    font-family: var(--mono);
-  }
-  .copies-sub { font-size: 11px; font-family: var(--mono); color: var(--muted); text-align: center; margin-top: 4px; }
-
-  /* TOGGLE BUTTONS */
-  .toggle-group {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-top: 6px;
-  }
-  .toggle-btn {
-    padding: 10px 8px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: #fff;
-    font-family: var(--display);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--muted);
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.2s;
-  }
-  .toggle-btn.selected {
-    border-color: var(--accent);
-    background: var(--accent-light);
-    color: var(--accent);
-  }
-
-  .quick-btn {
-    font-size: 11px;
-    font-family: var(--mono);
-    padding: 3px 10px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-    background: #fff;
-    color: var(--ink);
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .quick-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
-
-  /* FILE UPLOAD */
-  .upload-zone {
-    border: 2px dashed var(--border);
-    border-radius: var(--radius-sm);
-    padding: 20px 16px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: #fafaf8;
-    margin-top: 6px;
-    position: relative;
-  }
-  .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: var(--accent-light); }
-  .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-  .upload-icon { font-size: 28px; margin-bottom: 6px; }
-  .upload-main { font-size: 13px; font-weight: 600; color: var(--ink); }
-  .upload-sub { font-size: 11px; font-family: var(--mono); color: var(--muted); margin-top: 4px; line-height: 1.5; }
-  .upload-success {
-    display: none;
-    align-items: center;
-    gap: 10px;
-    background: var(--accent-light);
-    border: 1.5px solid var(--accent);
-    border-radius: var(--radius-sm);
-    padding: 10px 14px;
-    margin-top: 8px;
-  }
-  .upload-success.show { display: flex; }
-  .upload-success .file-icon { font-size: 20px; flex-shrink: 0; }
-  .upload-success .file-info { flex: 1; }
-  .upload-success .file-name { font-size: 13px; font-weight: 600; color: var(--accent); word-break: break-all; }
-  .upload-success .file-size { font-size: 11px; font-family: var(--mono); color: var(--muted); }
-  .upload-remove { font-size: 18px; color: var(--muted); cursor: pointer; padding: 4px; flex-shrink: 0; }
-  .upload-remove:hover { color: var(--danger); }
-
-  /* PRICE TABLE */
-  .price-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
-  .price-table th { font-size: 10px; font-family: var(--mono); color: var(--muted); text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); font-weight: 500; }
-  .price-table td { padding: 7px 8px; border-bottom: 1px solid var(--border); color: var(--ink); }
-  .price-table tr:last-child td { border-bottom: none; }
-  .price-table tr.active-row td { background: var(--accent-light); color: var(--accent); font-weight: 600; }
-  .price-table .rate { font-family: var(--mono); font-weight: 600; }
-
-  /* PAYMENT OPTIONS */
-  .payment-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-top: 6px;
-  }
-  .pay-btn {
-    padding: 12px 6px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: #fff;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.2s;
-  }
-  .pay-btn .pay-name { font-size: 13px; font-weight: 700; color: var(--ink); display: block; margin-bottom: 2px; }
-  .pay-btn .pay-sub { font-size: 10px; font-family: var(--mono); color: var(--muted); }
-  .pay-btn.selected { border-color: var(--accent); background: var(--accent-light); }
-  .pay-btn.selected .pay-name { color: var(--accent); }
-  .eco { border-top: 3px solid #4caf50; }
-  .inn { border-top: 3px solid #e65100; }
-  .vis { border-top: 3px solid #1a237e; }
-
-  /* COST SUMMARY */
-  .cost-box {
-    background: var(--accent-light);
-    border: 1px solid #b2dfce;
-    border-radius: var(--radius-sm);
-    padding: 12px 14px;
-    margin-top: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .cost-label { font-size: 13px; color: var(--accent); font-weight: 600; }
-  .cost-amount { font-size: 22px; font-weight: 800; font-family: var(--mono); color: var(--accent); }
-
-  /* T&C */
-  .tc-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    margin-top: 6px;
-    padding: 12px;
-    background: var(--warn-bg);
-    border: 1px solid var(--warn-border);
-    border-radius: var(--radius-sm);
-  }
-  .tc-row input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-    margin-top: 1px;
-    accent-color: var(--accent);
-    cursor: pointer;
-  }
-  .tc-text { font-size: 12px; line-height: 1.5; color: var(--ink); }
-  .tc-text a { color: var(--accent); text-decoration: underline; cursor: pointer; }
-
-  /* BUTTONS */
-  .btn-primary {
-    width: 100%;
-    padding: 15px;
-    background: var(--ink);
-    color: #fff;
-    border: none;
-    border-radius: var(--radius);
-    font-family: var(--display);
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 10px;
-    letter-spacing: 0.02em;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-  .btn-primary:hover { background: var(--accent); }
-  .btn-primary:active { transform: scale(0.98); }
-  .btn-primary:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; }
-
-  .btn-outline {
-    width: 100%;
-    padding: 12px;
-    background: transparent;
-    color: var(--ink);
-    border: 1.5px solid var(--ink);
-    border-radius: var(--radius);
-    font-family: var(--display);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 8px;
-    transition: all 0.2s;
-  }
-  .btn-outline:hover { background: var(--ink); color: #fff; }
-
-  /* ERROR */
-  .error-msg {
-    font-size: 12px;
-    font-family: var(--mono);
-    color: var(--danger);
-    margin-top: 6px;
-    display: none;
-    padding: 8px 12px;
-    background: #fdf0ee;
-    border-radius: var(--radius-sm);
-    border: 1px solid #f5c6c1;
-  }
-  .error-msg.show { display: block; }
-
-  /* RECEIPT */
-  #receipt-screen { display: none; }
-  #receipt-screen.visible { display: block; }
-
-  .receipt-card {
-    background: var(--card);
-    border-radius: var(--radius);
-    border: 2px solid var(--ink);
-    overflow: hidden;
-    margin-bottom: 14px;
-    animation: fadeUp 0.4s ease;
-  }
-  .receipt-header {
-    background: var(--ink);
-    color: #fff;
-    padding: 18px 20px;
-    text-align: center;
-  }
-  .receipt-header .check {
-    width: 48px;
-    height: 48px;
-    background: var(--accent);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    margin: 0 auto 10px;
-  }
-  .receipt-header h2 { font-size: 20px; font-weight: 800; }
-  .receipt-header p { font-size: 12px; font-family: var(--mono); color: #aaa; margin-top: 4px; }
-
-  .receipt-body { padding: 18px 20px; }
-  .job-number {
-    text-align: center;
-    padding: 16px;
-    background: var(--accent-light);
-    border-radius: var(--radius-sm);
-    margin-bottom: 16px;
-    border: 1px dashed var(--accent);
-  }
-  .job-number .jn-label { font-size: 11px; font-family: var(--mono); color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; }
-  .job-number .jn-code { font-size: 32px; font-weight: 800; font-family: var(--mono); color: var(--accent); letter-spacing: 2px; margin-top: 4px; }
-  .job-number .jn-hint { font-size: 11px; font-family: var(--mono); color: var(--muted); margin-top: 4px; }
-
-  .receipt-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 9px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
-    gap: 12px;
-  }
-  .receipt-row:last-child { border-bottom: none; }
-  .r-label { color: var(--muted); font-family: var(--mono); font-size: 11px; flex-shrink: 0; }
-  .r-value { font-weight: 600; text-align: right; }
-  .r-value.green { color: var(--accent); }
-
-  .receipt-divider {
-    border: none;
-    border-top: 2px dashed var(--border);
-    margin: 14px 0;
-  }
-
-  .show-receipt-btn { margin-top: 4px; }
-
-  /* FOOTER NOTE */
-  .footer-note {
-    text-align: center;
-    font-size: 11px;
-    font-family: var(--mono);
-    color: var(--muted);
-    padding: 20px 16px;
-    max-width: 480px;
-    margin: 0 auto;
-  }
+:root {
+  --ink: #0e0e0e; --paper: #f5f2eb; --card: #ffffff;
+  --accent: #1a6b3c; --accent-light: #e8f5ee; --accent-mid: #2d9e5f;
+  --muted: #6b6b6b; --border: #ddd9cf; --danger: #c0392b;
+  --warn-bg: #fff8e6; --warn-border: #f0c040;
+  --radius: 12px; --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--paper); color: var(--ink); font-family: 'Syne', sans-serif; min-height: 100vh; padding-bottom: 60px; }
+header { background: var(--ink); color: #fff; padding: 18px 20px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.logo { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+.logo span { color: #2d9e5f; }
+.logo-sub { font-size: 10px; font-family: 'DM Mono', monospace; color: #999; margin-top: 1px; }
+.header-badge { font-family: 'DM Mono', monospace; font-size: 10px; background: var(--accent); color: #fff; padding: 4px 10px; border-radius: 20px; }
+.progress-wrap { background: #fff; border-bottom: 1px solid var(--border); padding: 12px 20px; }
+.progress-steps { display: flex; gap: 6px; align-items: center; justify-content: center; }
+.p-step { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+.p-dot { width: 28px; height: 28px; border-radius: 50%; background: var(--border); color: var(--muted); font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+.p-dot.active { background: var(--accent); color: #fff; }
+.p-dot.done { background: var(--ink); color: #fff; }
+.p-label { font-size: 9px; font-family: 'DM Mono', monospace; color: var(--muted); text-align: center; }
+.p-line { height: 2px; width: 20px; background: var(--border); flex-shrink: 0; margin-bottom: 14px; transition: background 0.3s; }
+.p-line.done { background: var(--ink); }
+main { padding: 20px 16px 0; max-width: 480px; margin: 0 auto; }
+.price-banner { background: var(--accent); color: #fff; border-radius: var(--radius); padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+.price-icon { font-size: 24px; }
+.price-text strong { font-size: 15px; font-weight: 700; display: block; }
+.price-text span { font-size: 12px; font-family: 'DM Mono', monospace; opacity: 0.85; }
+.section { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 18px; margin-bottom: 14px; display: none; animation: fadeUp 0.3s ease; }
+.section.visible { display: block; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+.section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.section-title::before { content:''; display:block; width:3px; height:14px; background:var(--accent); border-radius:2px; }
+label { font-size: 13px; font-weight: 600; color: var(--ink); display: block; margin-bottom: 6px; margin-top: 14px; }
+label:first-of-type { margin-top: 0; }
+select, input[type="email"], input[type="tel"], input[type="text"] { width:100%; padding:11px 14px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-family:'Syne',sans-serif; font-size:14px; color:var(--ink); background:#fff; appearance:none; -webkit-appearance:none; outline:none; transition:border-color 0.2s; }
+select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b6b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; }
+select:focus, input:focus { border-color: var(--accent); }
+.copies-row { display:flex; align-items:center; gap:12px; margin-top:6px; }
+.stepper-btn { width:40px; height:40px; border-radius:var(--radius-sm); border:1.5px solid var(--border); background:#fff; font-size:20px; color:var(--ink); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; flex-shrink:0; }
+.stepper-btn:hover { border-color:var(--accent); color:var(--accent); }
+.stepper-btn:active { transform:scale(0.95); }
+input[type="number"] { width:100%; text-align:center; font-size:28px; font-weight:800; font-family:'DM Mono',monospace; border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:6px 4px; background:#fff; color:var(--ink); outline:none; -moz-appearance:textfield; }
+input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance:none; }
+input[type="number"]:focus { border-color:var(--accent); }
+.copies-sub { font-size:11px; font-family:'DM Mono',monospace; color:var(--muted); text-align:center; margin-top:4px; }
+.quick-btn { font-size:11px; font-family:'DM Mono',monospace; padding:3px 10px; border-radius:20px; border:1px solid var(--border); background:#fff; color:var(--ink); cursor:pointer; transition:all 0.15s; }
+.quick-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-light); }
+.toggle-group { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px; }
+.toggle-btn { padding:10px 8px; border:1.5px solid var(--border); border-radius:var(--radius-sm); background:#fff; font-family:'Syne',sans-serif; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; text-align:center; transition:all 0.2s; }
+.toggle-btn.selected { border-color:var(--accent); background:var(--accent-light); color:var(--accent); }
+.price-table { width:100%; border-collapse:collapse; margin-top:8px; font-size:12px; }
+.price-table th { font-size:10px; font-family:'DM Mono',monospace; color:var(--muted); text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); }
+.price-table td { padding:7px 8px; border-bottom:1px solid var(--border); color:var(--ink); }
+.price-table tr:last-child td { border-bottom:none; }
+.price-table tr.active-row td { background:var(--accent-light); color:var(--accent); font-weight:600; }
+.price-table .rate { font-family:'DM Mono',monospace; font-weight:600; }
+.upload-zone { border:2px dashed var(--border); border-radius:var(--radius-sm); padding:20px 16px; text-align:center; cursor:pointer; transition:all 0.2s; background:#fafaf8; margin-top:6px; position:relative; }
+.upload-zone:hover { border-color:var(--accent); background:var(--accent-light); }
+.upload-zone input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.upload-icon { font-size:28px; margin-bottom:6px; }
+.upload-main { font-size:13px; font-weight:600; color:var(--ink); }
+.upload-sub { font-size:11px; font-family:'DM Mono',monospace; color:var(--muted); margin-top:4px; line-height:1.5; }
+.upload-success { display:none; align-items:center; gap:10px; background:var(--accent-light); border:1.5px solid var(--accent); border-radius:var(--radius-sm); padding:10px 14px; margin-top:8px; }
+.upload-success.show { display:flex; }
+.u-file-icon { font-size:20px; flex-shrink:0; }
+.u-file-info { flex:1; }
+.u-file-name { font-size:13px; font-weight:600; color:var(--accent); word-break:break-all; }
+.u-file-size { font-size:11px; font-family:'DM Mono',monospace; color:var(--muted); }
+.upload-remove { font-size:18px; color:var(--muted); cursor:pointer; padding:4px; flex-shrink:0; }
+.upload-remove:hover { color:var(--danger); }
+.payment-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:6px; }
+.pay-btn { padding:12px 6px; border:1.5px solid var(--border); border-radius:var(--radius-sm); background:#fff; cursor:pointer; text-align:center; transition:all 0.2s; }
+.pay-btn .pay-name { font-size:13px; font-weight:700; color:var(--ink); display:block; margin-bottom:2px; }
+.pay-btn .pay-sub { font-size:10px; font-family:'DM Mono',monospace; color:var(--muted); }
+.pay-btn.selected { border-color:var(--accent); background:var(--accent-light); }
+.pay-btn.selected .pay-name { color:var(--accent); }
+.eco { border-top:3px solid #4caf50; }
+.inn { border-top:3px solid #e65100; }
+.vis { border-top:3px solid #1a237e; }
+.cost-box { background:var(--accent-light); border:1px solid #b2dfce; border-radius:var(--radius-sm); padding:12px 14px; margin-top:14px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.cost-left .cost-label { font-size:13px; color:var(--accent); font-weight:600; }
+.cost-left .cost-note { font-size:11px; font-family:'DM Mono',monospace; color:var(--accent); margin-top:3px; }
+.cost-amount { font-size:22px; font-weight:800; font-family:'DM Mono',monospace; color:var(--accent); flex-shrink:0; }
+.tc-row { display:flex; align-items:flex-start; gap:10px; margin-top:6px; padding:12px; background:var(--warn-bg); border:1px solid var(--warn-border); border-radius:var(--radius-sm); }
+.tc-row input[type="checkbox"] { width:18px; height:18px; flex-shrink:0; margin-top:1px; accent-color:var(--accent); cursor:pointer; }
+.tc-text { font-size:12px; line-height:1.5; color:var(--ink); }
+.tc-text a { color:var(--accent); text-decoration:underline; cursor:pointer; }
+.btn-primary { width:100%; padding:15px; background:var(--ink); color:#fff; border:none; border-radius:var(--radius); font-family:'Syne',sans-serif; font-size:15px; font-weight:700; cursor:pointer; margin-top:10px; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+.btn-primary:hover { background:var(--accent); }
+.btn-primary:active { transform:scale(0.98); }
+.btn-primary:disabled { background:var(--border); color:var(--muted); cursor:not-allowed; transform:none; }
+.btn-outline { width:100%; padding:12px; background:transparent; color:var(--ink); border:1.5px solid var(--ink); border-radius:var(--radius); font-family:'Syne',sans-serif; font-size:14px; font-weight:600; cursor:pointer; margin-top:8px; transition:all 0.2s; }
+.btn-outline:hover { background:var(--ink); color:#fff; }
+.error-msg { font-size:12px; font-family:'DM Mono',monospace; color:var(--danger); margin-top:6px; display:none; padding:8px 12px; background:#fdf0ee; border-radius:var(--radius-sm); border:1px solid #f5c6c1; }
+.error-msg.show { display:block; }
+#receipt-screen { display:none; }
+#receipt-screen.visible { display:block; }
+.receipt-card { background:var(--card); border-radius:var(--radius); border:2px solid var(--ink); overflow:hidden; margin-bottom:14px; animation:fadeUp 0.4s ease; }
+.receipt-header { background:var(--ink); color:#fff; padding:18px 20px; text-align:center; }
+.receipt-check { width:48px; height:48px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; margin:0 auto 10px; }
+.receipt-header h2 { font-size:20px; font-weight:800; }
+.receipt-header p { font-size:12px; font-family:'DM Mono',monospace; color:#aaa; margin-top:4px; }
+.receipt-body { padding:18px 20px; }
+.job-number { text-align:center; padding:16px; background:var(--accent-light); border-radius:var(--radius-sm); margin-bottom:16px; border:1px dashed var(--accent); }
+.jn-label { font-size:11px; font-family:'DM Mono',monospace; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; }
+.jn-code { font-size:32px; font-weight:800; font-family:'DM Mono',monospace; color:var(--accent); letter-spacing:2px; margin-top:4px; }
+.jn-hint { font-size:11px; font-family:'DM Mono',monospace; color:var(--muted); margin-top:4px; }
+.receipt-row { display:flex; justify-content:space-between; align-items:flex-start; padding:9px 0; border-bottom:1px solid var(--border); font-size:13px; gap:12px; }
+.receipt-row:last-child { border-bottom:none; }
+.r-label { color:var(--muted); font-family:'DM Mono',monospace; font-size:11px; flex-shrink:0; }
+.r-value { font-weight:600; text-align:right; }
+.r-value.green { color:var(--accent); }
+.receipt-divider { border:none; border-top:2px dashed var(--border); margin:14px 0; }
+.footer-note { text-align:center; font-size:11px; font-family:'DM Mono',monospace; color:var(--muted); padding:20px 16px; max-width:480px; margin:0 auto; }
 </style>
 </head>
 <body>
@@ -497,101 +136,79 @@
 
 <div class="progress-wrap" id="progress-wrap">
   <div class="progress-steps">
-    <div class="p-step">
-      <div class="p-dot active" id="pd1">1</div>
-      <div class="p-label">Print Job</div>
-    </div>
+    <div class="p-step"><div class="p-dot active" id="pd1">1</div><div class="p-label">Print Job</div></div>
     <div class="p-line" id="pl1"></div>
-    <div class="p-step">
-      <div class="p-dot" id="pd2">2</div>
-      <div class="p-label">Contact</div>
-    </div>
+    <div class="p-step"><div class="p-dot" id="pd2">2</div><div class="p-label">Contact</div></div>
     <div class="p-line" id="pl2"></div>
-    <div class="p-step">
-      <div class="p-dot" id="pd3">3</div>
-      <div class="p-label">Payment</div>
-    </div>
+    <div class="p-step"><div class="p-dot" id="pd3">3</div><div class="p-label">Payment</div></div>
     <div class="p-line" id="pl3"></div>
-    <div class="p-step">
-      <div class="p-dot" id="pd4">4</div>
-      <div class="p-label">Receipt</div>
-    </div>
+    <div class="p-step"><div class="p-dot" id="pd4">4</div><div class="p-label">Receipt</div></div>
   </div>
 </div>
 
 <main>
-
-  <!-- PRICE BANNER -->
   <div class="price-banner">
     <div class="price-icon">🖨</div>
     <div class="price-text">
-      <strong id="banner-rate">$1.00 per 10 copies — A4 Standard</strong>
+      <strong id="banner-rate">A4 Standard — 10c per copy</strong>
       <span>Min: 2 copies · Max: 400 copies · All kiosks</span>
     </div>
   </div>
 
-  <!-- STEP 1: PRINT JOB -->
+  <!-- STEP 1 -->
   <div class="section visible" id="step1">
     <div class="section-title">Print job details</div>
 
     <label for="location">Kiosk location</label>
     <select id="location">
       <option value="">— Select hostel kiosk —</option>
-      <option value="Manfed Hostel Kiosk">Manfed Hostel Kiosk</option>
-      <option value="Swinton Hostel Kiosk">Swinton Hostel Kiosk</option>
-      <option value="NC3 Hostel Kiosk">NC3 Hostel Kiosk</option>
-      <option value="NC5 Hostel Kiosk">NC5 Hostel Kiosk</option>
+      <option>Manfed Hostel Kiosk</option>
+      <option>Swinton Hostel Kiosk</option>
+      <option>NC3 Hostel Kiosk</option>
+      <option>NC5 Hostel Kiosk</option>
     </select>
 
     <label>Number of copies</label>
     <div class="copies-row">
       <button class="stepper-btn" onmousedown="startHold(-1)" onmouseup="stopHold()" onmouseleave="stopHold()" ontouchstart="startHold(-1)" ontouchend="stopHold()">−</button>
-      <div style="flex:1;text-align:center">
-        <input type="number" id="copies-input" min="2" max="400" value="2"
-          style="width:100%;text-align:center;font-size:28px;font-weight:800;font-family:var(--mono);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:6px 4px;background:#fff;color:var(--ink);outline:none;"
-          oninput="onCopiesInput(this)" onblur="onCopiesBlur(this)">
-        <div class="copies-sub" style="margin-top:4px">copies · min 2, max 400</div>
+      <div style="flex:1">
+        <input type="number" id="copies-input" min="2" max="400" value="2" oninput="onCopiesInput(this)" onblur="onCopiesBlur(this)">
+        <div class="copies-sub">copies · min 2, max 400</div>
       </div>
       <button class="stepper-btn" onmousedown="startHold(1)" onmouseup="stopHold()" onmouseleave="stopHold()" ontouchstart="startHold(1)" ontouchend="stopHold()">+</button>
     </div>
-    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-      <span style="font-size:11px;font-family:var(--mono);color:var(--muted);margin-top:2px">Quick set:</span>
-      <button onclick="setCopies(10)" class="quick-btn">10</button>
-      <button onclick="setCopies(20)" class="quick-btn">20</button>
-      <button onclick="setCopies(50)" class="quick-btn">50</button>
-      <button onclick="setCopies(100)" class="quick-btn">100</button>
-      <button onclick="setCopies(200)" class="quick-btn">200</button>
-      <button onclick="setCopies(400)" class="quick-btn">400</button>
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">Quick:</span>
+      <button class="quick-btn" onclick="setCopies(10)">10</button>
+      <button class="quick-btn" onclick="setCopies(20)">20</button>
+      <button class="quick-btn" onclick="setCopies(50)">50</button>
+      <button class="quick-btn" onclick="setCopies(100)">100</button>
+      <button class="quick-btn" onclick="setCopies(200)">200</button>
+      <button class="quick-btn" onclick="setCopies(400)">400</button>
     </div>
 
     <label>Paper type</label>
     <div class="toggle-group">
-      <button class="toggle-btn selected" onclick="selectPaper(this, 'A4 Standard', 1.00)">A4 Standard</button>
-      <button class="toggle-btn" onclick="selectPaper(this, 'A4 Glossy', 1.80)">A4 Glossy</button>
-      <button class="toggle-btn" onclick="selectPaper(this, 'A3 Standard', 2.00)">A3 Standard</button>
-      <button class="toggle-btn" onclick="selectPaper(this, 'Legal Size', 1.50)">Legal Size</button>
+      <button class="toggle-btn selected" onclick="selectPaper(this,'A4 Standard',1.00)">A4 Standard</button>
+      <button class="toggle-btn" onclick="selectPaper(this,'A4 Glossy',1.80)">A4 Glossy</button>
+      <button class="toggle-btn" onclick="selectPaper(this,'A3 Standard',2.00)">A3 Standard</button>
+      <button class="toggle-btn" onclick="selectPaper(this,'Legal Size',1.50)">Legal Size</button>
     </div>
 
-    <table class="price-table" id="price-table">
-      <thead>
-        <tr>
-          <th>Paper type</th>
-          <th>Rate per 10 copies</th>
-          <th>Your cost</th>
-        </tr>
-      </thead>
+    <table class="price-table">
+      <thead><tr><th>Paper type</th><th>Per copy</th><th>Your total</th></tr></thead>
       <tbody>
-        <tr class="active-row" id="ptr-a4s"><td>A4 Standard</td><td class="rate">$1.00</td><td class="rate" id="ptc-a4s">—</td></tr>
-        <tr id="ptr-a4g"><td>A4 Glossy</td><td class="rate">$1.80</td><td class="rate" id="ptc-a4g">—</td></tr>
-        <tr id="ptr-a3s"><td>A3 Standard</td><td class="rate">$2.00</td><td class="rate" id="ptc-a3s">—</td></tr>
-        <tr id="ptr-leg"><td>Legal Size</td><td class="rate">$1.50</td><td class="rate" id="ptc-leg">—</td></tr>
+        <tr class="active-row" id="ptr-a4s"><td>A4 Standard</td><td class="rate">10c</td><td class="rate" id="ptc-a4s">20c</td></tr>
+        <tr id="ptr-a4g"><td>A4 Glossy</td><td class="rate">18c</td><td class="rate" id="ptc-a4g">36c</td></tr>
+        <tr id="ptr-a3s"><td>A3 Standard</td><td class="rate">20c</td><td class="rate" id="ptc-a3s">40c</td></tr>
+        <tr id="ptr-leg"><td>Legal Size</td><td class="rate">15c</td><td class="rate" id="ptc-leg">30c</td></tr>
       </tbody>
     </table>
 
     <label>Print sides</label>
     <div class="toggle-group">
-      <button class="toggle-btn selected" onclick="selectToggle(this, 'sides')">Single sided</button>
-      <button class="toggle-btn" onclick="selectToggle(this, 'sides')">Double sided</button>
+      <button class="toggle-btn selected" onclick="selectSide(this,'Single sided')">Single sided</button>
+      <button class="toggle-btn" onclick="selectSide(this,'Double sided')">Double sided</button>
     </div>
 
     <label>Upload document or image</label>
@@ -602,90 +219,80 @@
       <div class="upload-sub">.doc .docx .xls .xlsx .ppt .pptx .pdf .txt .rtf<br>.jpg .jpeg .png .gif .bmp .tiff .webp</div>
     </div>
     <div class="upload-success" id="upload-success">
-      <span class="file-icon" id="file-icon">📄</span>
-      <div class="file-info">
-        <div class="file-name" id="file-name"></div>
-        <div class="file-size" id="file-size"></div>
+      <span class="u-file-icon" id="file-icon">📄</span>
+      <div class="u-file-info">
+        <div class="u-file-name" id="file-name-display"></div>
+        <div class="u-file-size" id="file-size-display"></div>
       </div>
-      <span class="upload-remove" onclick="removeFile()" title="Remove file">✕</span>
+      <span class="upload-remove" onclick="removeFile()">✕</span>
     </div>
 
     <div class="cost-box">
-      <span class="cost-label">Estimated total</span>
-      <span class="cost-amount" id="cost-display">$0.20</span>
+      <div class="cost-left">
+        <div class="cost-label">Estimated total</div>
+        <div class="cost-note" id="cost-note">2 copies × 10c each</div>
+      </div>
+      <div class="cost-amount" id="cost-display">20c</div>
     </div>
 
-    <div class="error-msg" id="err1">Please select a kiosk location and upload a file.</div>
+    <div class="error-msg" id="err1">Please select a kiosk location and upload your file.</div>
     <button class="btn-primary" onclick="goStep(2)">Continue to contact info →</button>
   </div>
 
-  <!-- STEP 2: CONTACT -->
+  <!-- STEP 2 -->
   <div class="section" id="step2">
     <div class="section-title">Your contact details</div>
-
     <label for="student-id">Student ID number</label>
     <input type="text" id="student-id" placeholder="e.g. R123456Y">
-
     <label for="email">Email address</label>
     <input type="email" id="email" placeholder="you@example.com">
-
     <label for="phone">Phone number</label>
     <input type="tel" id="phone" placeholder="07X XXX XXXX">
-
     <div class="error-msg" id="err2">Please enter your student ID, a valid email and phone number.</div>
     <button class="btn-primary" onclick="goStep(3)">Continue to payment →</button>
     <button class="btn-outline" onclick="goStep(1)">← Back</button>
   </div>
 
-  <!-- STEP 3: PAYMENT -->
+  <!-- STEP 3 -->
   <div class="section" id="step3">
     <div class="section-title">Payment</div>
-
     <label>Choose payment platform</label>
     <div class="payment-grid">
-      <button class="pay-btn eco" onclick="selectPay(this, 'EcoCash')">
-        <span class="pay-name">EcoCash</span>
-        <span class="pay-sub">Mobile money</span>
+      <button class="pay-btn eco" onclick="selectPay(this,'EcoCash')">
+        <span class="pay-name">EcoCash</span><span class="pay-sub">Mobile money</span>
       </button>
-      <button class="pay-btn inn" onclick="selectPay(this, 'InnBucks')">
-        <span class="pay-name">InnBucks</span>
-        <span class="pay-sub">Mobile money</span>
+      <button class="pay-btn inn" onclick="selectPay(this,'InnBucks')">
+        <span class="pay-name">InnBucks</span><span class="pay-sub">Mobile money</span>
       </button>
-      <button class="pay-btn vis" onclick="selectPay(this, 'Visa')">
-        <span class="pay-name">Visa</span>
-        <span class="pay-sub">Card payment</span>
+      <button class="pay-btn vis" onclick="selectPay(this,'Visa')">
+        <span class="pay-name">Visa</span><span class="pay-sub">Card payment</span>
       </button>
     </div>
-
     <div class="cost-box" style="margin-top:16px">
-      <div style="flex:1">
-        <span class="cost-label">Total to pay</span>
-        <div style="font-size:11px;font-family:var(--mono);color:#1a6b3c;margin-top:3px" id="per-copy-rate"></div>
+      <div class="cost-left">
+        <div class="cost-label">Total to pay</div>
+        <div class="cost-note" id="cost-note2"></div>
       </div>
-      <span class="cost-amount" id="cost-display2">$0.20</span>
+      <div class="cost-amount" id="cost-display2">20c</div>
     </div>
-
     <div class="tc-row" style="margin-top:14px">
       <input type="checkbox" id="tc-check">
-      <div class="tc-text">I agree to the <a onclick="alert('T&C: Prints are non-refundable once confirmed. You must collect your printout within 2 hours of confirmation. CampusPrint is not liable for files not compatible with the printer.')">Terms & Conditions</a>. I confirm my print job details are correct and payment will be processed immediately upon checkout.</div>
+      <div class="tc-text">I agree to the <a onclick="alert('Prints are non-refundable once confirmed. Collect within 2 hours. CampusPrint is not liable for files incompatible with the printer.')">Terms & Conditions</a>. I confirm my print details are correct and payment will be processed immediately.</div>
     </div>
-
     <div class="error-msg" id="err3">Please select a payment platform and accept the Terms & Conditions.</div>
     <button class="btn-primary" id="checkout-btn" onclick="checkout()">
-      <span>Checkout & Confirm Print</span>
-      <span>→</span>
+      <span>Checkout & Confirm Print</span><span>→</span>
     </button>
     <button class="btn-outline" onclick="goStep(2)">← Back</button>
   </div>
-
 </main>
 
-<!-- RECEIPT SCREEN -->
+<!-- RECEIPT -->
 <div id="receipt-screen">
   <main>
     <div class="receipt-card">
       <div class="receipt-header">
-        <div class="check">✓</div>
+        <div class="receipt-check">✓</div>
         <h2>Print Confirmed!</h2>
         <p id="receipt-time"></p>
       </div>
@@ -695,434 +302,265 @@
           <div class="jn-code" id="job-number"></div>
           <div class="jn-hint">Show this at the kiosk to collect your prints</div>
         </div>
-
-        <div class="receipt-row">
-          <span class="r-label">STUDENT ID</span>
-          <span class="r-value" id="r-studentid"></span>
-        </div>
-        <div class="receipt-row">
-          <span class="r-label">FILE</span>
-          <span class="r-value" id="r-file"></span>
-        </div>
-        <div class="receipt-row">
-          <span class="r-label">KIOSK LOCATION</span>
-          <span class="r-value" id="r-location"></span>
-        </div>
-        <div class="receipt-row">
-          <span class="r-label">COPIES</span>
-          <span class="r-value" id="r-copies"></span>
-        </div>
-        <div class="receipt-row">
-          <span class="r-label">PAPER TYPE</span>
-          <span class="r-value" id="r-paper"></span>
-        </div>
-        <div class="receipt-row">
-          <span class="r-label">PRINT SIDES</span>
-          <span class="r-value" id="r-sides"></span>
-        </div>
-        <div class="receipt-row">
-          <span class="r-label">STATUS</span>
-          <span class="r-value green" id="r-status">✓ Sent to printer</span>
-        </div>
-
+        <div class="receipt-row"><span class="r-label">STUDENT ID</span><span class="r-value" id="r-studentid"></span></div>
+        <div class="receipt-row"><span class="r-label">FILE</span><span class="r-value" id="r-file"></span></div>
+        <div class="receipt-row"><span class="r-label">KIOSK</span><span class="r-value" id="r-location"></span></div>
+        <div class="receipt-row"><span class="r-label">COPIES</span><span class="r-value" id="r-copies"></span></div>
+        <div class="receipt-row"><span class="r-label">PAPER</span><span class="r-value" id="r-paper"></span></div>
+        <div class="receipt-row"><span class="r-label">SIDES</span><span class="r-value" id="r-sides"></span></div>
+        <div class="receipt-row"><span class="r-label">STATUS</span><span class="r-value green">✓ Sent to printer</span></div>
         <hr class="receipt-divider">
-
-        <div class="receipt-row">
-          <span class="r-label">EMAIL</span>
-          <span class="r-value" id="r-email"></span>
-        </div>
-        <div class="receipt-row">
-          <span class="r-label">PHONE</span>
-          <span class="r-value" id="r-phone"></span>
-        </div>
-        <div class="receipt-row">
-          <span class="r-label">PAYMENT</span>
-          <span class="r-value" id="r-payment"></span>
-        </div>
-        <div class="receipt-row">
-          <span class="r-label">AMOUNT PAID</span>
-          <span class="r-value green" id="r-amount"></span>
-        </div>
-        <div class="receipt-row">
-          <span class="r-label">PRINT TIME</span>
-          <span class="r-value" id="r-printtime"></span>
-        </div>
+        <div class="receipt-row"><span class="r-label">EMAIL</span><span class="r-value" id="r-email"></span></div>
+        <div class="receipt-row"><span class="r-label">PHONE</span><span class="r-value" id="r-phone"></span></div>
+        <div class="receipt-row"><span class="r-label">PAYMENT</span><span class="r-value" id="r-payment"></span></div>
+        <div class="receipt-row"><span class="r-label">AMOUNT PAID</span><span class="r-value green" id="r-amount"></span></div>
+        <div class="receipt-row"><span class="r-label">TIME</span><span class="r-value" id="r-printtime"></span></div>
       </div>
     </div>
-
     <button class="btn-primary" onclick="window.print()">Save / Print Receipt</button>
     <button class="btn-outline" onclick="resetApp()">Start new print job</button>
   </main>
 </div>
 
-<div class="footer-note">CampusPrint · Campus kiosk printing service · Collect within 2 hours of confirmation</div>
+<div class="footer-note">CampusPrint · Campus kiosk printing · Collect within 2 hours of confirmation</div>
 
 <script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { initializeApp }                              from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-  /* ============================================================
-     FIREBASE CONFIGURATION
-  ============================================================ */
-  const firebaseConfig = {
-    apiKey: "AIzaSyCtHFTHPdTDbx-H438IXUtBdyvYrGmFvt0",
-    authDomain: "campusprint-e8ee9.firebaseapp.com",
-    projectId: "campusprint-e8ee9",
-    storageBucket: "campusprint-e8ee9.firebasestorage.app",
-    messagingSenderId: "661120467535",
-    appId: "1:661120467535:web:79acf2946fdc203c40603a"
-  };
+/* ── FIREBASE ── */
+const fbApp = initializeApp({
+  apiKey:            "AIzaSyCtHFTHPdTDbx-H438IXUtBdyvYrGmFvt0",
+  authDomain:        "campusprint-e8ee9.firebaseapp.com",
+  projectId:         "campusprint-e8ee9",
+  storageBucket:     "campusprint-e8ee9.firebasestorage.app",
+  messagingSenderId: "661120467535",
+  appId:             "1:661120467535:web:79acf2946fdc203c40603a"
+});
+const db = getFirestore(fbApp);
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+/* ── EMAILJS — fill in after emailjs.com setup ── */
+const EMAILJS = {
+  publicKey:     'YOUR_PUBLIC_KEY',
+  serviceId:     'YOUR_SERVICE_ID',
+  templateId:    'YOUR_TEMPLATE_ID',
+  operatorEmail: 'kudakwashe.dzvairo4@gmail.com'
+};
 
-  let copies = 2;
-  let selectedPaper = 'A4 Standard';
-  let paperRate = 1.00;
-  let selectedSides = 'Single sided';
-  let selectedPayment = '';
-  let currentStep = 1;
-  let uploadedFile = null;
-  let holdTimer = null;
-  let holdInterval = null;
+/* ── STATE ── */
+let copies = 2, paperRate = 1.00, paperName = 'A4 Standard';
+let sides = 'Single sided', payment = '', uploadedFile = null;
+let holdTimer = null, holdInterval = null;
 
-  const paperRates = {
-    'A4 Standard': 1.00,
-    'A4 Glossy': 1.80,
-    'A3 Standard': 2.00,
-    'Legal Size': 1.50
-  };
-  const paperTableIds = {
-    'A4 Standard': 'a4s',
-    'A4 Glossy': 'a4g',
-    'A3 Standard': 'a3s',
-    'Legal Size': 'leg'
-  };
-  const fileIcons = {
-    doc: '📝', docx: '📝', xls: '📊', xlsx: '📊',
-    ppt: '📊', pptx: '📊', pdf: '📕', txt: '📄', rtf: '📄',
-    jpg: '🖼', jpeg: '🖼', png: '🖼', gif: '🖼', bmp: '🖼', tiff: '🖼', webp: '🖼'
-  };
+const PAPER = {
+  'A4 Standard': { rate: 1.00, id: 'a4s' },
+  'A4 Glossy':   { rate: 1.80, id: 'a4g' },
+  'A3 Standard': { rate: 2.00, id: 'a3s' },
+  'Legal Size':  { rate: 1.50, id: 'leg' }
+};
+const ICONS = { doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',ppt:'📊',pptx:'📊',pdf:'📕',txt:'📄',rtf:'📄',jpg:'🖼',jpeg:'🖼',png:'🖼',gif:'🖼',bmp:'🖼',tiff:'🖼',webp:'🖼' };
 
-  function setCopies(n) {
-    copies = Math.min(400, Math.max(2, n));
-    document.getElementById('copies-input').value = copies;
-    updateCost();
+/* ── MONEY ── */
+function perCopy() { return paperRate / 10; }
+function calcCost() { return copies * perCopy(); }
+function fmt(n) { return n < 1 ? Math.round(n * 100) + 'c' : '$' + n.toFixed(2); }
+
+function updateCost() {
+  const cost = calcCost(), note = copies + ' copies × ' + fmt(perCopy()) + ' each';
+  document.getElementById('cost-display').textContent  = fmt(cost);
+  document.getElementById('cost-display2').textContent = fmt(cost);
+  document.getElementById('cost-note').textContent     = note;
+  document.getElementById('cost-note2').textContent    = note;
+  document.getElementById('banner-rate').textContent   = paperName + ' — ' + fmt(perCopy()) + ' per copy';
+  Object.entries(PAPER).forEach(([name, p]) => {
+    document.getElementById('ptc-' + p.id).textContent = fmt(copies * (p.rate / 10));
+    document.getElementById('ptr-' + p.id).classList.toggle('active-row', name === paperName);
+  });
+}
+
+/* ── COPIES ── */
+function setCopies(n) { copies = Math.min(400, Math.max(2, Math.round(n))); document.getElementById('copies-input').value = copies; updateCost(); }
+function onCopiesInput(el) { const v = parseInt(el.value); if (!isNaN(v)) { copies = Math.min(400, Math.max(2, v)); updateCost(); } }
+function onCopiesBlur(el) { setCopies(parseInt(el.value) || 2); }
+function startHold(d) { setCopies(copies + d); holdTimer = setTimeout(() => { holdInterval = setInterval(() => setCopies(copies + d), 80); }, 400); }
+function stopHold() { clearTimeout(holdTimer); clearInterval(holdInterval); }
+
+/* ── SELECTORS ── */
+function selectPaper(btn, name, rate) {
+  btn.closest('.toggle-group').querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected'); paperName = name; paperRate = rate; updateCost();
+}
+function selectSide(btn, val) {
+  btn.closest('.toggle-group').querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected'); sides = val;
+}
+function selectPay(btn, val) {
+  document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected'); payment = val;
+}
+
+/* ── FILE ── */
+function handleFile(input) {
+  const file = input.files[0]; if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  const ok = ['doc','docx','xls','xlsx','ppt','pptx','pdf','txt','rtf','jpg','jpeg','png','gif','bmp','tiff','webp'];
+  if (!ok.includes(ext)) { alert('Unsupported file type. Please upload a Microsoft 365 document or image file.'); input.value = ''; return; }
+  uploadedFile = file;
+  document.getElementById('file-icon').textContent         = ICONS[ext] || '📄';
+  document.getElementById('file-name-display').textContent = file.name;
+  document.getElementById('file-size-display').textContent = (file.size / 1048576).toFixed(2) + ' MB · ' + ext.toUpperCase();
+  document.getElementById('upload-success').classList.add('show');
+  document.getElementById('upload-zone').style.display = 'none';
+}
+function removeFile() {
+  uploadedFile = null; document.getElementById('file-input').value = '';
+  document.getElementById('upload-success').classList.remove('show');
+  document.getElementById('upload-zone').style.display = 'block';
+}
+
+/* ── ERRORS ── */
+function showErr(id, show) { document.getElementById(id).classList.toggle('show', show); }
+
+/* ── NAVIGATION ── */
+function goStep(step) {
+  if (step === 2) {
+    if (!document.getElementById('location').value || !uploadedFile) { showErr('err1', true); return; }
+    showErr('err1', false);
   }
-
-  function changeCopies(delta) { setCopies(copies + delta); }
-
-  function onCopiesInput(input) {
-    const val = parseInt(input.value);
-    if (!isNaN(val)) { copies = Math.min(400, Math.max(2, val)); updateCost(); }
+  if (step === 3) {
+    const sid = document.getElementById('student-id').value.trim();
+    const em  = document.getElementById('email').value;
+    const ph  = document.getElementById('phone').value;
+    if (!sid || !em.includes('@') || ph.length < 9) { showErr('err2', true); return; }
+    showErr('err2', false); updateCost();
   }
-
-  function onCopiesBlur(input) {
-    const val = parseInt(input.value);
-    copies = isNaN(val) ? 2 : Math.min(400, Math.max(2, val));
-    input.value = copies;
-    updateCost();
+  ['step1','step2','step3'].forEach((id, i) => document.getElementById(id).classList.toggle('visible', i + 1 === step));
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById('pd' + i).classList.toggle('active', i === step);
+    document.getElementById('pd' + i).classList.toggle('done',   i < step);
   }
+  for (let i = 1; i <= 3; i++) document.getElementById('pl' + i).classList.toggle('done', i < step);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
-  function startHold(delta) {
-    changeCopies(delta);
-    holdTimer = setTimeout(() => {
-      holdInterval = setInterval(() => changeCopies(delta), 80);
-    }, 400);
-  }
-
-  function stopHold() {
-    clearTimeout(holdTimer);
-    clearInterval(holdInterval);
-  }
-
-  function calcCost() {
-    return copies * (paperRate / 10);
-  }
-
-  function formatCost(amount) {
-    if (amount < 1) return (amount * 100).toFixed(0) + 'c';
-    return '$' + amount.toFixed(2);
-  }
-
-  function updateCost() {
-    const cost = calcCost();
-    const perCopy = paperRate / 10;
-    const display = formatCost(cost);
-    const el1 = document.getElementById('cost-display');
-    const el2 = document.getElementById('cost-display2');
-    const el3 = document.getElementById('per-copy-rate');
-    if (el1) el1.textContent = display;
-    if (el2) el2.textContent = display;
-    if (el3) el3.textContent = copies + ' copies × ' + formatCost(perCopy) + ' each';
-    document.getElementById('banner-rate').textContent = '$' + paperRate.toFixed(2) + ' per 10 copies — ' + selectedPaper + ' (' + formatCost(perCopy) + '/copy)';
-    updatePriceTable();
-  }
-
-  function updatePriceTable() {
-    Object.keys(paperRates).forEach(name => {
-      const id = paperTableIds[name];
-      const row = document.getElementById('ptr-' + id);
-      const cell = document.getElementById('ptc-' + id);
-      const cost = copies * (paperRates[name] / 10);
-      cell.textContent = formatCost(cost);
-      row.classList.toggle('active-row', name === selectedPaper);
+/* ── FIREBASE SAVE ── */
+async function saveJob(data) {
+  try {
+    const ref = await addDoc(collection(db, 'print_jobs'), {
+      jobNumber: data.jobNum, kioskLocation: data.location,
+      studentId: data.studentId, studentEmail: data.email, studentPhone: data.phone,
+      copies: data.copies, paperType: data.paper, printSides: data.sides,
+      paymentMethod: data.payment, amountPaid: data.amount,
+      fileName: data.fileName, collectBy: data.collectBy,
+      status: 'pending', createdAt: serverTimestamp()
     });
-  }
+    console.log('Saved to Firestore:', ref.id);
+  } catch (e) { console.error('Firestore error:', e); }
+}
 
-  function selectPaper(btn, name, rate) {
-    btn.parentElement.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    selectedPaper = name;
-    paperRate = rate;
-    updateCost();
-  }
-
-  function selectToggle(btn, group) {
-    btn.parentElement.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    if (group === 'sides') selectedSides = btn.textContent;
-  }
-
-  function selectPay(btn, name) {
-    document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    selectedPayment = name;
-  }
-
-  function handleFile(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const ext = file.name.split('.').pop().toLowerCase();
-    const allowed = ['doc','docx','xls','xlsx','ppt','pptx','pdf','txt','rtf','jpg','jpeg','png','gif','bmp','tiff','webp'];
-    if (!allowed.includes(ext)) {
-      alert('File type not supported. Please upload a Microsoft 365 document or a standard image file.');
-      input.value = '';
-      return;
-    }
-    uploadedFile = file;
-    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-    document.getElementById('file-name').textContent = file.name;
-    document.getElementById('file-size').textContent = sizeMB + ' MB · ' + ext.toUpperCase();
-    document.getElementById('file-icon').textContent = fileIcons[ext] || '📄';
-    document.getElementById('upload-success').classList.add('show');
-    document.getElementById('upload-zone').style.display = 'none';
-  }
-
-  function removeFile() {
-    uploadedFile = null;
-    document.getElementById('file-input').value = '';
-    document.getElementById('upload-success').classList.remove('show');
-    document.getElementById('upload-zone').style.display = 'block';
-  }
-
-  function showError(id, show) {
-    document.getElementById(id).classList.toggle('show', show);
-  }
-
-  function goStep(step) {
-    if (step === 2) {
-      const loc = document.getElementById('location').value;
-      if (!loc || !uploadedFile) { showError('err1', true); return; }
-      showError('err1', false);
-    }
-    if (step === 3) {
-      const sid = document.getElementById('student-id').value.trim();
-      const email = document.getElementById('email').value;
-      const phone = document.getElementById('phone').value;
-      if (!sid || !email.includes('@') || phone.length < 9) { showError('err2', true); return; }
-      showError('err2', false);
-    }
-    currentStep = step;
-    if (step === 3) updateCost();
-    ['step1','step2','step3'].forEach((id, i) => {
-      document.getElementById(id).classList.toggle('visible', i + 1 === step);
+/* ── EMAIL ── */
+async function sendEmail(data) {
+  if (EMAILJS.publicKey === 'YOUR_PUBLIC_KEY') { console.warn('EmailJS not configured.'); return; }
+  try {
+    await window.emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
+      to_email: EMAILJS.operatorEmail, job_number: data.jobNum,
+      kiosk_location: data.location, student_id: data.studentId,
+      student_email: data.email, student_phone: data.phone,
+      copies: data.copies + ' copies', paper_type: data.paper,
+      print_sides: data.sides, payment_method: data.payment,
+      amount_paid: data.amount, file_name: data.fileName,
+      print_time: data.dateTime, collect_by: data.collectBy
     });
-    for (let i = 1; i <= 4; i++) {
-      const dot = document.getElementById('pd' + i);
-      dot.classList.toggle('active', i === step);
-      dot.classList.toggle('done', i < step);
-    }
-    for (let i = 1; i <= 3; i++) {
-      document.getElementById('pl' + i).classList.toggle('done', i < step);
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  } catch (e) { console.error('Email error:', e); }
+}
 
-  function generateJobNumber() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let job = 'CP-';
-    for (let i = 0; i < 6; i++) job += chars[Math.floor(Math.random() * chars.length)];
-    return job;
-  }
+/* ── JOB NUMBER ── */
+function genJob() {
+  const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let j = 'CP-';
+  for (let i = 0; i < 6; i++) j += c[Math.floor(Math.random() * c.length)];
+  return j;
+}
 
-  /* ============================================================
-     EMAILJS CONFIGURATION — fill these in after setup at emailjs.com
-  ============================================================ */
-  const EMAILJS_CONFIG = {
-    publicKey:   'YOUR_PUBLIC_KEY',
-    serviceId:   'YOUR_SERVICE_ID',
-    templateId:  'YOUR_TEMPLATE_ID',
-    operatorEmail: 'kudakwashe.dzvairo4@gmail.com'
+/* ── CHECKOUT ── */
+async function checkout() {
+  if (!payment || !document.getElementById('tc-check').checked) { showErr('err3', true); return; }
+  showErr('err3', false);
+  const btn = document.getElementById('checkout-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span>Processing...</span><span style="display:inline-block;animation:spin 1s linear infinite">⟳</span>';
+
+  const now     = new Date();
+  const dateStr = now.toLocaleDateString('en-ZW', { day: 'numeric', month: 'short', year: 'numeric' });
+  const timeStr = now.toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
+  const fullDT  = dateStr + ' at ' + timeStr;
+  const collect = new Date(now.getTime() + 7200000).toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
+  const jobNum  = genJob();
+  const amount  = fmt(calcCost());
+
+  const data = {
+    jobNum, location: document.getElementById('location').value,
+    studentId: document.getElementById('student-id').value.trim(),
+    email: document.getElementById('email').value,
+    phone: document.getElementById('phone').value,
+    copies, paper: paperName, sides, payment, amount,
+    fileName: uploadedFile ? uploadedFile.name : '—',
+    dateTime: fullDT, collectBy: collect
   };
 
-  async function saveToFirebase(jobData) {
-    try {
-      const docRef = await addDoc(collection(db, 'print_jobs'), {
-        jobNumber:     jobData.jobNum,
-        kioskLocation: jobData.location,
-        studentId:     jobData.studentId,
-        studentEmail:  jobData.email,
-        studentPhone:  jobData.phone,
-        copies:        jobData.copies,
-        paperType:     jobData.paper,
-        printSides:    jobData.sides,
-        paymentMethod: jobData.payment,
-        amountPaid:    jobData.amount,
-        fileName:      jobData.fileName,
-        collectBy:     jobData.collectBy,
-        status:        'pending',
-        createdAt:     serverTimestamp()
-      });
-      console.log('Print job saved to Firebase:', docRef.id);
-      return { success: true, id: docRef.id };
-    } catch (err) {
-      console.error('Firebase save failed:', err);
-      return { success: false, error: err };
-    }
+  await Promise.all([saveJob(data), sendEmail(data)]);
+
+  document.getElementById('receipt-time').textContent  = 'Submitted ' + fullDT;
+  document.getElementById('job-number').textContent    = jobNum;
+  document.getElementById('r-studentid').textContent   = data.studentId;
+  document.getElementById('r-file').textContent        = data.fileName;
+  document.getElementById('r-location').textContent    = data.location;
+  document.getElementById('r-copies').textContent      = copies + ' copies';
+  document.getElementById('r-paper').textContent       = paperName;
+  document.getElementById('r-sides').textContent       = sides;
+  document.getElementById('r-email').textContent       = data.email;
+  document.getElementById('r-phone').textContent       = data.phone;
+  document.getElementById('r-payment').textContent     = payment + ' · PAID';
+  document.getElementById('r-amount').textContent      = amount;
+  document.getElementById('r-printtime').textContent   = fullDT + ' · Collect by ' + collect;
+
+  document.getElementById('pd4').classList.remove('active');
+  document.getElementById('pd4').classList.add('done');
+  document.getElementById('pl3').classList.add('done');
+  btn.disabled = false;
+  btn.innerHTML = '<span>Checkout & Confirm Print</span><span>→</span>';
+  ['step1','step2','step3'].forEach(id => document.getElementById(id).classList.remove('visible'));
+  document.getElementById('receipt-screen').classList.add('visible');
+  document.getElementById('progress-wrap').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ── RESET ── */
+function resetApp() {
+  copies = 2; paperRate = 1.00; paperName = 'A4 Standard';
+  sides = 'Single sided'; payment = ''; uploadedFile = null;
+  ['location','student-id','email','phone'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('copies-input').value = '2';
+  document.getElementById('tc-check').checked = false;
+  document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.toggle-group').forEach(g =>
+    g.querySelectorAll('.toggle-btn').forEach((b, i) => b.classList.toggle('selected', i === 0))
+  );
+  removeFile(); updateCost();
+  document.getElementById('receipt-screen').classList.remove('visible');
+  document.getElementById('progress-wrap').style.display = 'block';
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById('pd' + i).classList.remove('active', 'done');
+    if (i === 1) document.getElementById('pd1').classList.add('active');
   }
+  for (let i = 1; i <= 3; i++) document.getElementById('pl' + i).classList.remove('done');
+  ['step1','step2','step3'].forEach((id, i) => document.getElementById(id).classList.toggle('visible', i === 0));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
-  async function sendEmailNotification(jobData) {
-    if (EMAILJS_CONFIG.publicKey === 'YOUR_PUBLIC_KEY') {
-      console.warn('EmailJS not configured — skipping email.');
-      return { skipped: true };
-    }
-    try {
-      const params = {
-        to_email:       EMAILJS_CONFIG.operatorEmail,
-        job_number:     jobData.jobNum,
-        kiosk_location: jobData.location,
-        student_id:     jobData.studentId,
-        student_email:  jobData.email,
-        student_phone:  jobData.phone,
-        copies:         jobData.copies + ' copies',
-        paper_type:     jobData.paper,
-        print_sides:    jobData.sides,
-        payment_method: jobData.payment,
-        amount_paid:    jobData.amount,
-        file_name:      jobData.fileName,
-        print_time:     jobData.dateTime,
-        collect_by:     jobData.collectBy
-      };
-      return await window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, params);
-    } catch (err) {
-      console.error('Email failed:', err);
-      return { skipped: true };
-    }
-  }
+/* ── EXPOSE TO HTML ── */
+Object.assign(window, { setCopies, onCopiesInput, onCopiesBlur, startHold, stopHold, selectPaper, selectSide, selectPay, handleFile, removeFile, goStep, checkout, resetApp });
 
-  async function checkout() {
-    if (!selectedPayment || !document.getElementById('tc-check').checked) {
-      showError('err3', true); return;
-    }
-    showError('err3', false);
-
-    const btn = document.getElementById('checkout-btn');
-    btn.disabled = true;
-    btn.innerHTML = '<span>Sending print job...</span><span style="animation:spin 1s linear infinite;display:inline-block">⟳</span>';
-
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
-    const dateStr = now.toLocaleDateString('en-ZW', { day: 'numeric', month: 'short', year: 'numeric' });
-    const fullDateTime = dateStr + ' at ' + timeStr;
-    const collectBy = new Date(now.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
-    const jobNum = generateJobNumber();
-    const cost = formatCost(calcCost());
-    const location = document.getElementById('location').value;
-    const studentId = document.getElementById('student-id').value.trim();
-    const email = document.getElementById('email').value;
-    const phone = document.getElementById('phone').value;
-    const fileName = uploadedFile ? uploadedFile.name : '—';
-
-    const jobData = {
-      jobNum, location, studentId, email, phone,
-      copies, paper: selectedPaper, sides: selectedSides,
-      payment: selectedPayment, amount: cost,
-      fileName, dateTime: fullDateTime, collectBy
-    };
-
-    try {
-      const [emailResult, firebaseResult] = await Promise.all([
-        sendEmailNotification(jobData),
-        saveToFirebase(jobData)
-      ]);
-      if (firebaseResult.success) {
-        console.log('Job saved to database — ID:', firebaseResult.id);
-      }
-    } catch (err) {
-      console.error('Checkout error:', err);
-    }
-
-    document.getElementById('receipt-time').textContent = 'Submitted ' + fullDateTime;
-    document.getElementById('job-number').textContent = jobNum;
-    document.getElementById('r-studentid').textContent = studentId;
-    document.getElementById('r-file').textContent = fileName;
-    document.getElementById('r-location').textContent = location;
-    document.getElementById('r-copies').textContent = copies + ' copies';
-    document.getElementById('r-paper').textContent = selectedPaper;
-    document.getElementById('r-sides').textContent = selectedSides;
-    document.getElementById('r-email').textContent = email;
-    document.getElementById('r-phone').textContent = phone;
-    document.getElementById('r-payment').textContent = selectedPayment + ' · PAID';
-    document.getElementById('r-amount').textContent = cost;
-    document.getElementById('r-printtime').textContent = fullDateTime + ' · Collect by ' + collectBy;
-
-    document.getElementById('pd4').classList.remove('active');
-    document.getElementById('pd4').classList.add('done');
-    document.getElementById('pl3').classList.add('done');
-
-    btn.disabled = false;
-    btn.innerHTML = '<span>Checkout & Confirm Print</span><span>→</span>';
-
-    ['step1','step2','step3'].forEach(id => document.getElementById(id).classList.remove('visible'));
-    document.getElementById('receipt-screen').classList.add('visible');
-    document.getElementById('progress-wrap').style.display = 'none';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function resetApp() {
-    copies = 2; selectedPaper = 'A4 Standard'; paperRate = 1.00;
-    selectedSides = 'Single sided'; selectedPayment = ''; uploadedFile = null;
-    document.getElementById('location').value = '';
-    document.getElementById('copies-input').value = '2';
-    document.getElementById('student-id').value = '';
-    document.getElementById('email').value = '';
-    document.getElementById('phone').value = '';
-    document.getElementById('tc-check').checked = false;
-    document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('selected'));
-    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
-    document.querySelectorAll('.toggle-group').forEach(g => {
-      const first = g.querySelector('.toggle-btn');
-      if (first) first.classList.add('selected');
-    });
-    removeFile();
-    updateCost();
-    document.getElementById('receipt-screen').classList.remove('visible');
-    document.getElementById('progress-wrap').style.display = 'block';
-    for (let i = 1; i <= 4; i++) {
-      const dot = document.getElementById('pd' + i);
-      dot.classList.remove('active', 'done');
-      if (i === 1) dot.classList.add('active');
-    }
-    for (let i = 1; i <= 3; i++) document.getElementById('pl' + i).classList.remove('done');
-    document.getElementById('step1').classList.add('visible');
-    document.getElementById('step2').classList.remove('visible');
-    document.getElementById('step3').classList.remove('visible');
-    currentStep = 1;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  updateCost();
+updateCost();
 </script>
 </body>
 </html>
