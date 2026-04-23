@@ -336,7 +336,7 @@ const fbApp = initializeApp({
   storageBucket:     "campusprint-e8ee9.firebasestorage.app",
   messagingSenderId: "661120467535",
   appId:             "1:661120467535:web:79acf2946fdc203c40603a"
-});
+}, 'campusprint-app');
 const db = getFirestore(fbApp);
 
 /* ── EMAILJS — fill in after emailjs.com setup ── */
@@ -446,16 +446,28 @@ function goStep(step) {
 /* ── FIREBASE SAVE ── */
 async function saveJob(data) {
   try {
-    const ref = await addDoc(collection(db, 'print_jobs'), {
-      jobNumber: data.jobNum, kioskLocation: data.location,
-      studentId: data.studentId, studentEmail: data.email, studentPhone: data.phone,
-      copies: data.copies, paperType: data.paper, printSides: data.sides,
-      paymentMethod: data.payment, amountPaid: data.amount,
-      fileName: data.fileName, collectBy: data.collectBy,
-      status: 'pending', createdAt: serverTimestamp()
+    const docRef = await addDoc(collection(db, 'print_jobs'), {
+      jobNumber:     data.jobNum,
+      kioskLocation: data.location,
+      studentId:     data.studentId,
+      studentEmail:  data.email,
+      studentPhone:  data.phone,
+      copies:        Number(data.copies),
+      paperType:     data.paper,
+      printSides:    data.sides,
+      paymentMethod: data.payment,
+      amountPaid:    data.amount,
+      fileName:      data.fileName,
+      collectBy:     data.collectBy,
+      status:        'pending',
+      createdAt:     serverTimestamp()
     });
-    console.log('Saved to Firestore:', ref.id);
-  } catch (e) { console.error('Firestore error:', e); }
+    console.log('✅ Saved to Firestore — ID:', docRef.id);
+    return true;
+  } catch (e) {
+    console.error('❌ Firestore save failed:', e.code, e.message);
+    return false;
+  }
 }
 
 /* ── EMAIL ── */
