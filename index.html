@@ -444,14 +444,7 @@ function goStep(step) {
 }
 
 /* ── FIREBASE CONNECTION TEST ── */
-(async () => {
-  try {
-    const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    console.log('🔥 Firebase connected — project:', db.app.options.projectId);
-  } catch(e) {
-    console.error('🔥 Firebase connection error:', e);
-  }
-})();
+console.log('🔥 Firebase ready — project:', fbApp.options.projectId);
 
 /* ── FIREBASE SAVE ── */
 async function saveJob(data) {
@@ -513,49 +506,56 @@ async function checkout() {
   btn.disabled = true;
   btn.innerHTML = '<span>Processing...</span><span style="display:inline-block;animation:spin 1s linear infinite">⟳</span>';
 
-  const now     = new Date();
-  const dateStr = now.toLocaleDateString('en-ZW', { day: 'numeric', month: 'short', year: 'numeric' });
-  const timeStr = now.toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
-  const fullDT  = dateStr + ' at ' + timeStr;
-  const collect = new Date(now.getTime() + 7200000).toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
-  const jobNum  = genJob();
-  const amount  = fmt(calcCost());
+  try {
+    const now     = new Date();
+    const dateStr = now.toLocaleDateString('en-ZW', { day: 'numeric', month: 'short', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
+    const fullDT  = dateStr + ' at ' + timeStr;
+    const collect = new Date(now.getTime() + 7200000).toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
+    const jobNum  = genJob();
+    const amount  = fmt(calcCost());
 
-  const data = {
-    jobNum, location: document.getElementById('location').value,
-    studentId: document.getElementById('student-id').value.trim(),
-    email: document.getElementById('email').value,
-    phone: document.getElementById('phone').value,
-    copies, paper: paperName, sides, payment, amount,
-    fileName: uploadedFile ? uploadedFile.name : '—',
-    dateTime: fullDT, collectBy: collect
-  };
+    const data = {
+      jobNum, location: document.getElementById('location').value,
+      studentId: document.getElementById('student-id').value.trim(),
+      email: document.getElementById('email').value,
+      phone: document.getElementById('phone').value,
+      copies, paper: paperName, sides, payment, amount,
+      fileName: uploadedFile ? uploadedFile.name : '—',
+      dateTime: fullDT, collectBy: collect
+    };
 
-  await Promise.all([saveJob(data), sendEmail(data)]);
+    await Promise.all([saveJob(data), sendEmail(data)]);
 
-  document.getElementById('receipt-time').textContent  = 'Submitted ' + fullDT;
-  document.getElementById('job-number').textContent    = jobNum;
-  document.getElementById('r-studentid').textContent   = data.studentId;
-  document.getElementById('r-file').textContent        = data.fileName;
-  document.getElementById('r-location').textContent    = data.location;
-  document.getElementById('r-copies').textContent      = copies + ' copies';
-  document.getElementById('r-paper').textContent       = paperName;
-  document.getElementById('r-sides').textContent       = sides;
-  document.getElementById('r-email').textContent       = data.email;
-  document.getElementById('r-phone').textContent       = data.phone;
-  document.getElementById('r-payment').textContent     = payment + ' · PAID';
-  document.getElementById('r-amount').textContent      = amount;
-  document.getElementById('r-printtime').textContent   = fullDT + ' · Collect by ' + collect;
+    document.getElementById('receipt-time').textContent  = 'Submitted ' + fullDT;
+    document.getElementById('job-number').textContent    = jobNum;
+    document.getElementById('r-studentid').textContent   = data.studentId;
+    document.getElementById('r-file').textContent        = data.fileName;
+    document.getElementById('r-location').textContent    = data.location;
+    document.getElementById('r-copies').textContent      = copies + ' copies';
+    document.getElementById('r-paper').textContent       = paperName;
+    document.getElementById('r-sides').textContent       = sides;
+    document.getElementById('r-email').textContent       = data.email;
+    document.getElementById('r-phone').textContent       = data.phone;
+    document.getElementById('r-payment').textContent     = payment + ' · PAID';
+    document.getElementById('r-amount').textContent      = amount;
+    document.getElementById('r-printtime').textContent   = fullDT + ' · Collect by ' + collect;
 
-  document.getElementById('pd4').classList.remove('active');
-  document.getElementById('pd4').classList.add('done');
-  document.getElementById('pl3').classList.add('done');
-  btn.disabled = false;
-  btn.innerHTML = '<span>Checkout & Confirm Print</span><span>→</span>';
-  ['step1','step2','step3'].forEach(id => document.getElementById(id).classList.remove('visible'));
-  document.getElementById('receipt-screen').classList.add('visible');
-  document.getElementById('progress-wrap').style.display = 'none';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('pd4').classList.remove('active');
+    document.getElementById('pd4').classList.add('done');
+    document.getElementById('pl3').classList.add('done');
+    ['step1','step2','step3'].forEach(id => document.getElementById(id).classList.remove('visible'));
+    document.getElementById('receipt-screen').classList.add('visible');
+    document.getElementById('progress-wrap').style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  } catch(e) {
+    console.error('Checkout error:', e);
+    alert('Something went wrong. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>Checkout & Confirm Print</span><span>→</span>';
+  }
 }
 
 /* ── RESET ── */
