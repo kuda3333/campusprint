@@ -413,7 +413,12 @@ function handleFile(input) {
   document.getElementById('upload-zone').style.display = 'none';
 }
 function removeFile() {
-  uploadedFile = null; document.getElementById('file-input').value = '';
+  uploadedFile = null;
+  const input = document.getElementById('file-input');
+  input.value = '';
+  // Force browser to clear cached file so onchange fires even if same file re-selected
+  input.type = 'text';
+  input.type = 'file';
   document.getElementById('upload-success').classList.remove('show');
   document.getElementById('upload-zone').style.display = 'block';
 }
