@@ -532,6 +532,23 @@ async function checkout() {
 
     await Promise.all([saveJob(data), sendEmail(data)]);
 
+    // Send notifications via Resend
+    fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'print_job',
+        data: {
+          jobNum, location: data.location,
+          studentId: data.studentId,
+          email: data.email, phone: data.phone,
+          copies, paper: paperName, sides,
+          payment, amount, fileName: data.fileName,
+          collectBy: collect
+        }
+      })
+    }).catch(e => console.warn('Email notification failed:', e));
+
     document.getElementById('receipt-time').textContent  = 'Submitted ' + fullDT;
     document.getElementById('job-number').textContent    = jobNum;
     document.getElementById('r-studentid').textContent   = data.studentId;
