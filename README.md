@@ -10,17 +10,28 @@ IPP, ezeep, Pharos).
 
 ## What's in the repo right now
 
-- `index.html` — single-page mobile checkout UI. Design tokens at the top are the
-  one piece worth carrying forward; the rest is being rebuilt around a proper file
-  pipeline + SSO + an operator dashboard.
-- `api/send-email.js` — Vercel serverless function for Resend notifications.
-  Hardened on 2026-05-16; **requires `RESEND_API_KEY`, `RESEND_FROM`, `OPERATOR_EMAIL`,
-  and `ALLOWED_ORIGINS` env vars to run.** Returns `500 service_unavailable` otherwise.
-- `firestore.rules` — deny-all safety lock until proper auth + per-collection rules
-  ship. **Deploy this against a new `campusprint-prod` Firebase project, not the
-  shared salon project the code currently points at.**
+- `index.html` — single-page mobile checkout UI. Uses the **Supabase JS client** (CDN)
+  for persisting print jobs. Replace the two placeholder values near the top of the
+  `<script>` block (`SUPABASE_URL` and `SUPABASE_ANON`) with your project's values.
+- `supabase/migrations/001_print_jobs.sql` — run this in Supabase SQL Editor once to
+  create the `print_jobs` table, status-machine check constraints, indexes, and RLS
+  policies.
+- `api/send-email.js` — Vercel serverless function for Resend operator/student
+  notifications. Requires `RESEND_API_KEY`, `RESEND_FROM`, `OPERATOR_EMAIL`, and
+  `ALLOWED_ORIGINS` env vars. Returns `500 service_unavailable` if any are missing.
+- `firestore.rules` — deny-all safety lock for the old Firebase project.
+  **Deploy and then stop using that Firebase project entirely.**
 - `package.json` — minimal project metadata + `vercel dev / deploy` scripts.
 - `SECURITY.md` — vulnerability tracker + roadmap.
+
+## First-time Supabase setup
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. Go to **SQL Editor → New query**, paste `supabase/migrations/001_print_jobs.sql`, and **Run**.
+3. Go to **Settings → API**, copy the **Project URL** and **anon public key**.
+4. Open `index.html`, find the two `// ← replace` lines near the top of the `<script>` block,
+   and paste in those values.
+5. Push to Vercel — no build step needed.
 
 ## Local dev
 

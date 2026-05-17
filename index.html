@@ -325,27 +325,17 @@ input[type="number"]:focus { border-color:var(--accent); }
 <div class="footer-note">CampusPrint · Campus kiosk printing · Collect within 2 hours of confirmation</div>
 
 <script type="module">
-import { initializeApp }                              from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-/* ── FIREBASE ── */
-const fbApp = initializeApp({
-  apiKey:            "AIzaSyDO0qkpj-oQeVFDIF86KRzteKh1Lai-_vU",
-  authDomain:        "saloon-booking-ce824.firebaseapp.com",
-  projectId:         "saloon-booking-ce824",
-  storageBucket:     "saloon-booking-ce824.firebasestorage.app",
-  messagingSenderId: "600545587683",
-  appId:             "1:600545587683:web:da4d5863341a126dc870d6"
-}, 'campusprint-app');
-const db = getFirestore(fbApp);
-
-/* ── EMAILJS — fill in after emailjs.com setup ── */
-const EMAILJS = {
-  publicKey:     'YOUR_PUBLIC_KEY',
-  serviceId:     'YOUR_SERVICE_ID',
-  templateId:    'YOUR_TEMPLATE_ID',
-  operatorEmail: 'kudakwashe.dzvairo4@gmail.com'
-};
+/* ── SUPABASE ── */
+// Get these two values from:
+//   supabase.com → your project → Settings → API → Project URL & anon public key
+// The anon key is safe to ship in client-side code — Supabase Row-Level Security
+// (RLS) is the access-control layer, not the secrecy of this key.
+// Run the SQL in supabase/migrations/001_print_jobs.sql in the Supabase SQL editor first.
+const SUPABASE_URL  = 'https://dnfxqvnnufvggxbiahzq.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZnhxdm5udWZ2Z2d4YmlhaHpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMjkwNTEsImV4cCI6MjA5NDYwNTA1MX0.4mI_JMBPJs2ZcmQTwPI-cncVtrH3x525_LxFNnBmflQ';
+const db = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 /* ── STATE ── */
 let copies = 2, paperRate = 1.00, paperName = 'A4 Standard';
@@ -448,52 +438,30 @@ function goStep(step) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-/* ── FIREBASE CONNECTION TEST ── */
-console.log('🔥 Firebase ready — project:', fbApp.options.projectId);
-
-/* ── FIREBASE SAVE ── */
+/* ── SUPABASE SAVE ── */
 async function saveJob(data) {
-  try {
-    console.log('📤 Attempting Firestore save...');
-    const docRef = await addDoc(collection(db, 'print_jobs'), {
-      jobNumber:     data.jobNum,
-      kioskLocation: data.location,
-      studentId:     data.studentId,
-      studentEmail:  data.email,
-      studentPhone:  data.phone,
-      copies:        Number(data.copies),
-      paperType:     data.paper,
-      printSides:    data.sides,
-      paymentMethod: data.payment,
-      amountPaid:    data.amount,
-      fileName:      data.fileName,
-      collectBy:     data.collectBy,
-      status:        'pending',
-      createdAt:     serverTimestamp()
+  const { error } = await db
+    .from('print_jobs')
+    .insert({
+      job_number:     data.jobNum,
+      kiosk_location: data.location,
+      student_id:     data.studentId,
+      student_email:  data.email,
+      student_phone:  data.phone,
+      copies:         Number(data.copies),
+      paper_type:     data.paper,
+      print_sides:    data.sides,
+      payment_method: data.payment,
+      amount_paid:    data.amount,
+      file_name:      data.fileName,
+      collect_by:     data.collectBy,
+      status:         'pending',
     });
-    console.log('✅ Saved to Firestore — ID:', docRef.id);
-    return true;
-  } catch (e) {
-    console.error('❌ Firestore save failed — code:', e.code, '— message:', e.message);
-    alert('Firebase error: ' + e.code + ' — ' + e.message);
+  if (error) {
+    console.error('Supabase insert failed:', error.message, error.code);
     return false;
   }
-}
-
-/* ── EMAIL ── */
-async function sendEmail(data) {
-  if (EMAILJS.publicKey === 'YOUR_PUBLIC_KEY') { console.warn('EmailJS not configured.'); return; }
-  try {
-    await window.emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
-      to_email: EMAILJS.operatorEmail, job_number: data.jobNum,
-      kiosk_location: data.location, student_id: data.studentId,
-      student_email: data.email, student_phone: data.phone,
-      copies: data.copies + ' copies', paper_type: data.paper,
-      print_sides: data.sides, payment_method: data.payment,
-      amount_paid: data.amount, file_name: data.fileName,
-      print_time: data.dateTime, collect_by: data.collectBy
-    });
-  } catch (e) { console.error('Email error:', e); }
+  return true;
 }
 
 /* ── JOB NUMBER ── */
@@ -530,7 +498,8 @@ async function checkout() {
       dateTime: fullDT, collectBy: collect
     };
 
-    await Promise.all([saveJob(data), sendEmail(data)]);
+    const saved = await saveJob(data);
+    if (!saved) throw new Error('Failed to record your print job. Please try again.');
 
     // Send notifications via Resend
     fetch('/api/send-email', {

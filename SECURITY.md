@@ -18,6 +18,24 @@ Implications:
 - **SSO is mandatory.** Auth via Microsoft Entra ID, Google Workspace, SAML 2.0
   (Shibboleth / Okta / Ping), or magic-link fallback gated to an email-domain allowlist.
 
+## Supabase migration (2026-05-17)
+
+Firebase Firestore replaced with Supabase Postgres. Key files changed:
+
+| File | Change |
+|---|---|
+| `index.html` | Firebase SDK + init removed; Supabase JS client wired via CDN (`esm.sh`). `saveJob` now calls `db.from('print_jobs').insert(...)`. Dead EmailJS stub + `sendEmail` function removed. |
+| `supabase/migrations/001_print_jobs.sql` | Schema for `print_jobs` table with status-machine check constraint, indexes, RLS policies (anon INSERT allowed; anon SELECT denied; service_role full access). |
+
+**Manual steps required to activate:**
+1. Create a free project at supabase.com.
+2. In the project's **SQL Editor**, run the contents of `supabase/migrations/001_print_jobs.sql`.
+3. Copy **Project URL** and **anon public key** from Settings → API.
+4. Replace the two placeholder values in `index.html` (marked with `// ← replace`):
+   - `SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co'`
+   - `SUPABASE_ANON = 'YOUR_ANON_KEY_HERE'`
+5. Deploy (the static `index.html` change is enough — no build step yet).
+
 ## IMMEDIATE STOP — fixes landed in this commit
 
 | # | Item | File | Status |
