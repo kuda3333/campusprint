@@ -2,334 +2,1125 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CampusPrint — Remote Printing</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<title>CampusPrint — University Print Release</title>
+<meta name="description" content="Mobile print release for campus kiosks. Submit a document, walk to any kiosk, collect within two hours.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <style>
+/* ─── DESIGN TOKENS ───────────────────────────────────────────────── */
 :root {
-  --ink: #0e0e0e; --paper: #f5f2eb; --card: #ffffff;
-  --accent: #1a6b3c; --accent-light: #e8f5ee; --accent-mid: #2d9e5f;
-  --muted: #6b6b6b; --border: #ddd9cf; --danger: #c0392b;
-  --warn-bg: #fff8e6; --warn-border: #f0c040;
-  --radius: 12px; --radius-sm: 8px;
+  /* Type */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Syne', var(--font-sans);
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Ink (one ink scale, not four arbitrary greys) */
+  --ink-1: #0a0a0a;
+  --ink-2: #18181b;
+  --ink-3: #3f3f46;
+  --ink-4: #71717a;
+
+  /* Surface */
+  --paper: #fafaf7;
+  --card: #ffffff;
+  --line: #e4e4e7;
+  --line-soft: #f4f4f5;
+
+  /* Accent — the keeper green */
+  --accent: #1a6b3c;
+  --accent-deep: #134e2a;
+  --accent-tint: #ecf6f0;
+
+  /* Semantic */
+  --danger: #b91c1c;
+  --danger-tint: #fef2f2;
+
+  /* Radius — 6/10/14 scale, with a rule */
+  --r-pill: 999px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+
+  /* Shadow — one canonical lift */
+  --lift: 0 1px 2px rgba(10,10,10,0.04), 0 4px 14px rgba(10,10,10,0.04);
+  --lift-strong: 0 1px 2px rgba(10,10,10,0.06), 0 8px 32px rgba(10,10,10,0.06);
+
+  /* Motion */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --t-fast: 150ms;
+  --t-med: 220ms;
+  --t-slow: 400ms;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--paper); color: var(--ink); font-family: 'Syne', sans-serif; min-height: 100vh; padding-bottom: 60px; }
-header { background: var(--ink); color: #fff; padding: 18px 20px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-.logo { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
-.logo span { color: #2d9e5f; }
-.logo-sub { font-size: 10px; font-family: 'DM Mono', monospace; color: #999; margin-top: 1px; }
-.header-badge { font-family: 'DM Mono', monospace; font-size: 10px; background: var(--accent); color: #fff; padding: 4px 10px; border-radius: 20px; }
-.progress-wrap { background: #fff; border-bottom: 1px solid var(--border); padding: 12px 20px; }
-.progress-steps { display: flex; gap: 6px; align-items: center; justify-content: center; }
-.p-step { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
-.p-dot { width: 28px; height: 28px; border-radius: 50%; background: var(--border); color: var(--muted); font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
-.p-dot.active { background: var(--accent); color: #fff; }
-.p-dot.done { background: var(--ink); color: #fff; }
-.p-label { font-size: 9px; font-family: 'DM Mono', monospace; color: var(--muted); text-align: center; }
-.p-line { height: 2px; width: 20px; background: var(--border); flex-shrink: 0; margin-bottom: 14px; transition: background 0.3s; }
-.p-line.done { background: var(--ink); }
-main { padding: 20px 16px 0; max-width: 480px; margin: 0 auto; }
-.price-banner { background: var(--accent); color: #fff; border-radius: var(--radius); padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
-.price-icon { font-size: 24px; }
-.price-text strong { font-size: 15px; font-weight: 700; display: block; }
-.price-text span { font-size: 12px; font-family: 'DM Mono', monospace; opacity: 0.85; }
-.section { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 18px; margin-bottom: 14px; display: none; animation: fadeUp 0.3s ease; }
-.section.visible { display: block; }
-@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-@keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
-.section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-.section-title::before { content:''; display:block; width:3px; height:14px; background:var(--accent); border-radius:2px; }
-label { font-size: 13px; font-weight: 600; color: var(--ink); display: block; margin-bottom: 6px; margin-top: 14px; }
-label:first-of-type { margin-top: 0; }
-select, input[type="email"], input[type="tel"], input[type="text"] { width:100%; padding:11px 14px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-family:'Syne',sans-serif; font-size:14px; color:var(--ink); background:#fff; appearance:none; -webkit-appearance:none; outline:none; transition:border-color 0.2s; }
-select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b6b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; }
-select:focus, input:focus { border-color: var(--accent); }
-.copies-row { display:flex; align-items:center; gap:12px; margin-top:6px; }
-.stepper-btn { width:40px; height:40px; border-radius:var(--radius-sm); border:1.5px solid var(--border); background:#fff; font-size:20px; color:var(--ink); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; flex-shrink:0; }
-.stepper-btn:hover { border-color:var(--accent); color:var(--accent); }
-.stepper-btn:active { transform:scale(0.95); }
-input[type="number"] { width:100%; text-align:center; font-size:28px; font-weight:800; font-family:'DM Mono',monospace; border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:6px 4px; background:#fff; color:var(--ink); outline:none; -moz-appearance:textfield; }
-input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance:none; }
-input[type="number"]:focus { border-color:var(--accent); }
-.copies-sub { font-size:11px; font-family:'DM Mono',monospace; color:var(--muted); text-align:center; margin-top:4px; }
-.quick-btn { font-size:11px; font-family:'DM Mono',monospace; padding:3px 10px; border-radius:20px; border:1px solid var(--border); background:#fff; color:var(--ink); cursor:pointer; transition:all 0.15s; }
-.quick-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-light); }
-.toggle-group { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px; }
-.toggle-btn { padding:10px 8px; border:1.5px solid var(--border); border-radius:var(--radius-sm); background:#fff; font-family:'Syne',sans-serif; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; text-align:center; transition:all 0.2s; }
-.toggle-btn.selected { border-color:var(--accent); background:var(--accent-light); color:var(--accent); }
-.price-table { width:100%; border-collapse:collapse; margin-top:8px; font-size:12px; }
-.price-table th { font-size:10px; font-family:'DM Mono',monospace; color:var(--muted); text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); }
-.price-table td { padding:7px 8px; border-bottom:1px solid var(--border); color:var(--ink); }
-.price-table tr:last-child td { border-bottom:none; }
-.price-table tr.active-row td { background:var(--accent-light); color:var(--accent); font-weight:600; }
-.price-table .rate { font-family:'DM Mono',monospace; font-weight:600; }
-.upload-zone { border:2px dashed var(--border); border-radius:var(--radius-sm); padding:20px 16px; text-align:center; cursor:pointer; transition:all 0.2s; background:#fafaf8; margin-top:6px; position:relative; }
-.upload-zone:hover { border-color:var(--accent); background:var(--accent-light); }
-.upload-zone input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
-.upload-icon { font-size:28px; margin-bottom:6px; }
-.upload-main { font-size:13px; font-weight:600; color:var(--ink); }
-.upload-sub { font-size:11px; font-family:'DM Mono',monospace; color:var(--muted); margin-top:4px; line-height:1.5; }
-.upload-success { display:none; align-items:center; gap:10px; background:var(--accent-light); border:1.5px solid var(--accent); border-radius:var(--radius-sm); padding:10px 14px; margin-top:8px; }
-.upload-success.show { display:flex; }
-.u-file-icon { font-size:20px; flex-shrink:0; }
-.u-file-info { flex:1; }
-.u-file-name { font-size:13px; font-weight:600; color:var(--accent); word-break:break-all; }
-.u-file-size { font-size:11px; font-family:'DM Mono',monospace; color:var(--muted); }
-.upload-remove { font-size:18px; color:var(--muted); cursor:pointer; padding:4px; flex-shrink:0; }
-.upload-remove:hover { color:var(--danger); }
-.payment-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:6px; }
-.pay-btn { padding:12px 6px; border:1.5px solid var(--border); border-radius:var(--radius-sm); background:#fff; cursor:pointer; text-align:center; transition:all 0.2s; }
-.pay-btn .pay-name { font-size:13px; font-weight:700; color:var(--ink); display:block; margin-bottom:2px; }
-.pay-btn .pay-sub { font-size:10px; font-family:'DM Mono',monospace; color:var(--muted); }
-.pay-btn.selected { border-color:var(--accent); background:var(--accent-light); }
-.pay-btn.selected .pay-name { color:var(--accent); }
-.eco { border-top:3px solid #4caf50; }
-.inn { border-top:3px solid #e65100; }
-.vis { border-top:3px solid #1a237e; }
-.cost-box { background:var(--accent-light); border:1px solid #b2dfce; border-radius:var(--radius-sm); padding:12px 14px; margin-top:14px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
-.cost-left .cost-label { font-size:13px; color:var(--accent); font-weight:600; }
-.cost-left .cost-note { font-size:11px; font-family:'DM Mono',monospace; color:var(--accent); margin-top:3px; }
-.cost-amount { font-size:22px; font-weight:800; font-family:'DM Mono',monospace; color:var(--accent); flex-shrink:0; }
-.tc-row { display:flex; align-items:flex-start; gap:10px; margin-top:6px; padding:12px; background:var(--warn-bg); border:1px solid var(--warn-border); border-radius:var(--radius-sm); }
-.tc-row input[type="checkbox"] { width:18px; height:18px; flex-shrink:0; margin-top:1px; accent-color:var(--accent); cursor:pointer; }
-.tc-text { font-size:12px; line-height:1.5; color:var(--ink); }
-.tc-text a { color:var(--accent); text-decoration:underline; cursor:pointer; }
-.btn-primary { width:100%; padding:15px; background:var(--ink); color:#fff; border:none; border-radius:var(--radius); font-family:'Syne',sans-serif; font-size:15px; font-weight:700; cursor:pointer; margin-top:10px; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; }
-.btn-primary:hover { background:var(--accent); }
-.btn-primary:active { transform:scale(0.98); }
-.btn-primary:disabled { background:var(--border); color:var(--muted); cursor:not-allowed; transform:none; }
-.btn-outline { width:100%; padding:12px; background:transparent; color:var(--ink); border:1.5px solid var(--ink); border-radius:var(--radius); font-family:'Syne',sans-serif; font-size:14px; font-weight:600; cursor:pointer; margin-top:8px; transition:all 0.2s; }
-.btn-outline:hover { background:var(--ink); color:#fff; }
-.error-msg { font-size:12px; font-family:'DM Mono',monospace; color:var(--danger); margin-top:6px; display:none; padding:8px 12px; background:#fdf0ee; border-radius:var(--radius-sm); border:1px solid #f5c6c1; }
-.error-msg.show { display:block; }
-#receipt-screen { display:none; }
-#receipt-screen.visible { display:block; }
-.receipt-card { background:var(--card); border-radius:var(--radius); border:2px solid var(--ink); overflow:hidden; margin-bottom:14px; animation:fadeUp 0.4s ease; }
-.receipt-header { background:var(--ink); color:#fff; padding:18px 20px; text-align:center; }
-.receipt-check { width:48px; height:48px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; margin:0 auto 10px; }
-.receipt-header h2 { font-size:20px; font-weight:800; }
-.receipt-header p { font-size:12px; font-family:'DM Mono',monospace; color:#aaa; margin-top:4px; }
-.receipt-body { padding:18px 20px; }
-.job-number { text-align:center; padding:16px; background:var(--accent-light); border-radius:var(--radius-sm); margin-bottom:16px; border:1px dashed var(--accent); }
-.jn-label { font-size:11px; font-family:'DM Mono',monospace; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; }
-.jn-code { font-size:32px; font-weight:800; font-family:'DM Mono',monospace; color:var(--accent); letter-spacing:2px; margin-top:4px; }
-.jn-hint { font-size:11px; font-family:'DM Mono',monospace; color:var(--muted); margin-top:4px; }
-.receipt-row { display:flex; justify-content:space-between; align-items:flex-start; padding:9px 0; border-bottom:1px solid var(--border); font-size:13px; gap:12px; }
-.receipt-row:last-child { border-bottom:none; }
-.r-label { color:var(--muted); font-family:'DM Mono',monospace; font-size:11px; flex-shrink:0; }
-.r-value { font-weight:600; text-align:right; }
-.r-value.green { color:var(--accent); }
-.receipt-divider { border:none; border-top:2px dashed var(--border); margin:14px 0; }
-.footer-note { text-align:center; font-size:11px; font-family:'DM Mono',monospace; color:var(--muted); padding:20px 16px; max-width:480px; margin:0 auto; }
+
+/* ─── BASE ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; padding: 0; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  background: var(--paper);
+  min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv11', 'ss01';
+  text-rendering: optimizeLegibility;
+}
+
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+input, select, textarea { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; cursor: pointer; }
+svg { display: block; }
+.icon { width: 20px; height: 20px; flex-shrink: 0; }
+.icon-sm { width: 16px; height: 16px; flex-shrink: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* ─── HEADER ───────────────────────────────────────────────────────── */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(250, 250, 247, 0.85);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.app-header__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: var(--ink-1);
+}
+.brand__mark { color: var(--accent); }
+.brand__sub {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0;
+  color: var(--ink-4);
+}
+
+/* ─── PROGRESS — semantic ol, restrained styling ────────────────── */
+.progress {
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+}
+.progress__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 20px;
+}
+.steps {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.steps__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.steps__dot {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  color: var(--ink-4);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--t-med) var(--ease), border-color var(--t-med) var(--ease), color var(--t-med) var(--ease);
+}
+.steps__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-4);
+  transition: color var(--t-med) var(--ease);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.steps__bar {
+  flex: 1;
+  height: 1.5px;
+  background: var(--line);
+  border-radius: var(--r-pill);
+  transition: background var(--t-med) var(--ease);
+}
+.steps__item.is-active .steps__dot { background: var(--ink-1); border-color: var(--ink-1); color: #fff; }
+.steps__item.is-active .steps__label { color: var(--ink-1); }
+.steps__item.is-done .steps__dot { background: var(--accent); border-color: var(--accent); color: #fff; }
+.steps__item.is-done .steps__label { color: var(--ink-3); }
+.steps__bar.is-done { background: var(--accent); }
+
+/* ─── LAYOUT ───────────────────────────────────────────────────────── */
+.shell {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 1024px) {
+  .shell { grid-template-columns: minmax(0, 1fr) 320px; gap: 32px; padding: 40px 32px 96px; }
+}
+
+.form-col { min-width: 0; }
+
+/* ─── SECTION CARDS ─────────────────────────────────────────────── */
+.section {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 24px;
+  margin-bottom: 16px;
+  display: none;
+}
+.section.is-visible { display: block; }
+@media (prefers-reduced-motion: no-preference) {
+  .section.is-visible { animation: sectionIn var(--t-slow) var(--ease); }
+}
+@keyframes sectionIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.section__title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-4);
+  margin-bottom: 18px;
+}
+@media (min-width: 1024px) {
+  .section { padding: 28px 32px; }
+}
+
+/* ─── FORM CONTROLS ─────────────────────────────────────────────── */
+.field { margin-top: 16px; }
+.field:first-of-type { margin-top: 0; }
+.field__label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  margin-bottom: 8px;
+}
+.field__hint { font-size: 12px; color: var(--ink-4); margin-top: 6px; }
+
+.input, .select {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-1);
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md);
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.input::placeholder { color: var(--ink-4); }
+.input:hover, .select:hover { border-color: #d4d4d8; }
+.input:focus-visible, .select:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-tint);
+}
+.select {
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+/* ─── COPIES STEPPER ─────────────────────────────────────────────── */
+.copies {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  gap: 10px;
+  align-items: center;
+}
+.stepper {
+  height: 44px;
+  width: 44px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--line);
+  background: var(--card);
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform 80ms var(--ease);
+}
+.stepper:hover { border-color: var(--ink-3); background: var(--line-soft); }
+.stepper:active { transform: scale(0.94); }
+.stepper:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-tint); outline: none; }
+
+.copies__value {
+  width: 100%;
+  height: 44px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-1);
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md);
+  -moz-appearance: textfield;
+  outline: none;
+  transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.copies__value::-webkit-inner-spin-button,
+.copies__value::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.copies__value:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-tint); }
+
+.copies__quick {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.quick-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-4);
+  letter-spacing: 0.02em;
+  margin-right: 2px;
+}
+.quick {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+  padding: 5px 10px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  transition: all var(--t-fast) var(--ease);
+}
+.quick:hover { border-color: var(--ink-3); color: var(--ink-1); }
+.quick:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); outline: none; }
+
+/* ─── TOGGLE GROUPS (paper, sides) ─────────────────────────────── */
+.toggle-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.toggle {
+  position: relative;
+  height: 44px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-3);
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all var(--t-fast) var(--ease);
+}
+.toggle:hover { border-color: var(--ink-3); color: var(--ink-1); }
+.toggle:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-tint); outline: none; }
+.toggle.is-selected {
+  background: var(--ink-1);
+  border-color: var(--ink-1);
+  color: #fff;
+}
+.toggle__check {
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity var(--t-fast) var(--ease), transform var(--t-med) var(--ease);
+}
+.toggle.is-selected .toggle__check { opacity: 1; transform: scale(1); }
+
+@media (min-width: 480px) {
+  .toggle-group--four { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ─── UPLOAD ────────────────────────────────────────────────────── */
+.upload {
+  position: relative;
+  border: 1.5px dashed var(--line);
+  background: var(--paper);
+  border-radius: var(--r-md);
+  padding: 24px 16px;
+  text-align: center;
+  transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.upload:hover { border-color: var(--accent); background: var(--accent-tint); }
+.upload__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.upload__icon {
+  width: 28px;
+  height: 28px;
+  margin: 0 auto 10px;
+  color: var(--ink-3);
+}
+.upload__main { font-size: 13px; font-weight: 500; color: var(--ink-1); }
+.upload__sub { font-size: 11px; color: var(--ink-4); margin-top: 4px; line-height: 1.6; }
+
+.upload-success {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  background: var(--accent-tint);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+}
+.upload-success.is-visible { display: flex; }
+.upload-success__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  background: rgba(255,255,255,0.6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-deep);
+  flex-shrink: 0;
+}
+.upload-success__body { flex: 1; min-width: 0; }
+.upload-success__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-deep);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.upload-success__size { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+.upload-success__remove {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  color: var(--ink-4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.upload-success__remove:hover { background: rgba(255,255,255,0.6); color: var(--danger); }
+
+/* ─── SUMMARY BAR (mobile inline summary) ─────────────────────── */
+.summary {
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: var(--accent-tint);
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.summary__icon {
+  color: var(--accent-deep);
+  flex-shrink: 0;
+}
+.summary__label { font-size: 11px; font-weight: 600; color: var(--accent-deep); text-transform: uppercase; letter-spacing: 0.06em; }
+.summary__text { font-size: 13px; font-weight: 500; color: var(--ink-2); margin-top: 2px; }
+
+/* ─── T&C ───────────────────────────────────────────────────────── */
+.tc {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--line-soft);
+  border-radius: var(--r-md);
+  margin-top: 18px;
+}
+.tc__check {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+.tc__check input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.tc__check-box {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1.5px solid var(--ink-3);
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--t-fast) var(--ease);
+}
+.tc__check-box svg {
+  width: 12px;
+  height: 12px;
+  color: #fff;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity var(--t-fast) var(--ease), transform var(--t-med) var(--ease);
+}
+.tc__check input:checked + .tc__check-box { background: var(--accent); border-color: var(--accent); }
+.tc__check input:checked + .tc__check-box svg { opacity: 1; transform: scale(1); }
+.tc__check input:focus-visible + .tc__check-box { box-shadow: 0 0 0 3px var(--accent-tint); }
+.tc__text { font-size: 12px; color: var(--ink-3); line-height: 1.5; }
+.tc__text a { color: var(--accent-deep); border-bottom: 1px dotted var(--accent); }
+
+/* ─── BUTTONS ───────────────────────────────────────────────────── */
+.btn {
+  width: 100%;
+  height: 48px;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: var(--r-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all var(--t-fast) var(--ease);
+}
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--accent-tint); }
+.btn--primary {
+  background: var(--ink-1);
+  color: #fff;
+  border: 1px solid var(--ink-1);
+  margin-top: 20px;
+}
+.btn--primary:hover { background: var(--ink-2); }
+.btn--primary:active { transform: scale(0.99); }
+.btn--primary:disabled { background: var(--ink-4); border-color: var(--ink-4); cursor: not-allowed; }
+.btn--ghost {
+  background: transparent;
+  color: var(--ink-3);
+  border: 1px solid var(--line);
+  margin-top: 8px;
+}
+.btn--ghost:hover { background: var(--line-soft); color: var(--ink-1); border-color: var(--ink-3); }
+.btn .icon { width: 16px; height: 16px; }
+.btn--spinner .icon { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── ERROR ─────────────────────────────────────────────────────── */
+.error {
+  display: none;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-top: 12px;
+  background: var(--danger-tint);
+  border: 1px solid #fecaca;
+  border-radius: var(--r-md);
+  font-size: 12px;
+  color: var(--danger);
+}
+.error.is-visible { display: flex; }
+.error .icon { color: var(--danger); margin-top: 1px; }
+
+/* ─── RIGHT RAIL (desktop) ──────────────────────────────────────── */
+.rail-col { display: none; }
+@media (min-width: 1024px) {
+  .rail-col { display: block; }
+}
+.rail-card {
+  position: sticky;
+  top: 96px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 24px;
+}
+.rail-card + .rail-card { margin-top: 16px; }
+.rail__eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-4);
+  margin-bottom: 10px;
+}
+.rail__headline {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink-1);
+  line-height: 1.1;
+  margin-bottom: 12px;
+}
+.rail__body { font-size: 13px; color: var(--ink-3); line-height: 1.55; }
+.rail__divider { height: 1px; background: var(--line); margin: 18px 0; }
+.rail__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 12px;
+}
+.rail__row-label { color: var(--ink-4); font-weight: 500; flex-shrink: 0; }
+.rail__row-value { color: var(--ink-1); font-weight: 500; text-align: right; word-break: break-word; min-width: 0; }
+.rail__row-value--muted { color: var(--ink-4); font-weight: 400; }
+
+/* ─── RECEIPT ───────────────────────────────────────────────────── */
+.receipt { display: none; }
+.receipt.is-visible { display: block; }
+.receipt-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  position: relative;
+}
+/* Real receipt-paper perforation cue via radial-gradient mask edges */
+.receipt-card::before,
+.receipt-card::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background:
+    radial-gradient(circle at 8px 50%, var(--paper) 4px, transparent 4.5px) 0 0 / 16px 100% repeat-x;
+  pointer-events: none;
+}
+.receipt-card::before { top: 0; }
+.receipt-card::after { bottom: 0; transform: scaleY(-1); }
+.receipt__top {
+  background: var(--ink-1);
+  color: #fff;
+  padding: 28px 24px 24px;
+  text-align: center;
+}
+.receipt__check {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.receipt__check svg { width: 28px; height: 28px; }
+@media (prefers-reduced-motion: no-preference) {
+  .receipt.is-visible .receipt__check svg path { stroke-dasharray: 26; stroke-dashoffset: 26; animation: drawCheck 600ms 200ms var(--ease) forwards; }
+}
+@keyframes drawCheck { to { stroke-dashoffset: 0; } }
+.receipt__title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.receipt__time { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 4px; }
+
+.receipt__body { padding: 24px; }
+.job-code {
+  text-align: center;
+  padding: 18px 14px;
+  background: var(--accent-tint);
+  border-radius: var(--r-md);
+  margin-bottom: 18px;
+}
+.job-code__label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent-deep); }
+.job-code__value {
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--accent-deep);
+  letter-spacing: 0.16em;
+  margin: 6px 0 4px;
+}
+.job-code__hint { font-size: 11px; color: var(--ink-3); }
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  font-size: 13px;
+  gap: 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.receipt-row:last-child { border-bottom: none; }
+.receipt-row__label { color: var(--ink-4); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; flex-shrink: 0; }
+.receipt-row__value { color: var(--ink-1); font-weight: 500; text-align: right; word-break: break-word; min-width: 0; }
+.receipt-row__value--ok { color: var(--accent-deep); display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end; }
+
+.receipt__actions { margin-top: 16px; }
+
+/* ─── FOOTER ────────────────────────────────────────────────────── */
+.footer {
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-4);
+  padding: 32px 16px 0;
+  max-width: 1100px;
+  margin: 0 auto;
+  letter-spacing: 0.01em;
+}
+
+/* ─── MOTION RESPECT ───────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+}
+
+/* ─── PRINT (for receipt printout) ─────────────────────────────── */
+@media print {
+  .app-header, .progress, .rail-col, .receipt__actions, .footer { display: none !important; }
+  body { background: #fff; }
+  .receipt-card { border: none; box-shadow: none; }
+  .receipt__top { background: #fff; color: #000; }
+  .receipt__check { background: #1a6b3c; }
+  .receipt__time { color: #888; }
+}
 </style>
 </head>
 <body>
 
-<header>
-  <div>
-    <div class="logo">Campus<span>Print</span></div>
-    <div class="logo-sub">Remote printing · Campus kiosks</div>
+<!-- Inline SVG sprite — define once, reuse anywhere via <use> -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-printer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 6 2 18 2 18 9"/>
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+      <rect width="12" height="8" x="6" y="14" rx="1"/>
+    </symbol>
+    <symbol id="i-map-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>
+      <circle cx="12" cy="10" r="3"/>
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14"/><path d="M12 5v14"/>
+    </symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14"/>
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </symbol>
+    <symbol id="i-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21.801 10A10 10 0 1 1 17 3.335"/>
+      <path d="m9 11 3 3L22 4"/>
+    </symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </symbol>
+    <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
+      <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
+    </symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+    </symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+    </symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>
+    </symbol>
+    <symbol id="i-loader" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+    </symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="app-header">
+  <div class="app-header__inner">
+    <div class="brand">
+      <span>Campus<span class="brand__mark">Print</span></span>
+      <span class="brand__sub">Print release</span>
+    </div>
   </div>
-  <div class="header-badge">ONLINE</div>
 </header>
 
-<div class="progress-wrap" id="progress-wrap">
-  <div class="progress-steps">
-    <div class="p-step"><div class="p-dot active" id="pd1">1</div><div class="p-label">Print Job</div></div>
-    <div class="p-line" id="pl1"></div>
-    <div class="p-step"><div class="p-dot" id="pd2">2</div><div class="p-label">Contact</div></div>
-    <div class="p-line" id="pl2"></div>
-    <div class="p-step"><div class="p-dot" id="pd3">3</div><div class="p-label">Done</div></div>
+<nav class="progress" id="progress-wrap" aria-label="Print submission steps">
+  <div class="progress__inner">
+    <ol class="steps">
+      <li class="steps__item is-active" id="ps1">
+        <span class="steps__dot" id="pd1">1</span>
+        <span class="steps__label">Print</span>
+      </li>
+      <li class="steps__bar" id="pl1" aria-hidden="true"></li>
+      <li class="steps__item" id="ps2">
+        <span class="steps__dot" id="pd2">2</span>
+        <span class="steps__label">Contact</span>
+      </li>
+      <li class="steps__bar" id="pl2" aria-hidden="true"></li>
+      <li class="steps__item" id="ps3">
+        <span class="steps__dot" id="pd3">3</span>
+        <span class="steps__label">Done</span>
+      </li>
+    </ol>
   </div>
-</div>
+</nav>
 
-<main>
-  <div class="price-banner">
-    <div class="price-icon">🖨</div>
-    <div class="price-text">
-      <strong id="banner-rate">A4 Standard · Print Service</strong>
-      <span>Covered by your institution · Min 2 · Max 400 copies</span>
-    </div>
-  </div>
+<div class="shell">
 
-  <!-- STEP 1 -->
-  <div class="section visible" id="step1">
-    <div class="section-title">Print job details</div>
+  <main class="form-col">
 
-    <label for="location">Kiosk location</label>
-    <select id="location">
-      <option value="">— Select hostel kiosk —</option>
-      <option>Manfed Hostel Kiosk</option>
-      <option>Swinton Hostel Kiosk</option>
-      <option>NC3 Hostel Kiosk</option>
-      <option>NC5 Hostel Kiosk</option>
-    </select>
+    <!-- STEP 1 -->
+    <section class="section is-visible" id="step1" aria-labelledby="t-step1">
+      <h2 class="section__title" id="t-step1">Print job</h2>
 
-    <label>Number of copies</label>
-    <div class="copies-row">
-      <button class="stepper-btn" onmousedown="startHold(-1)" onmouseup="stopHold()" onmouseleave="stopHold()" ontouchstart="startHold(-1)" ontouchend="stopHold()">−</button>
-      <div style="flex:1">
-        <input type="number" id="copies-input" min="2" max="400" value="2" oninput="onCopiesInput(this)" onblur="onCopiesBlur(this)">
-        <div class="copies-sub">copies · min 2, max 400</div>
+      <div class="field">
+        <label class="field__label" for="location">Kiosk location</label>
+        <select id="location" class="select" required>
+          <option value="">Select a kiosk</option>
+          <option>Manfed Hostel Kiosk</option>
+          <option>Swinton Hostel Kiosk</option>
+          <option>NC3 Hostel Kiosk</option>
+          <option>NC5 Hostel Kiosk</option>
+        </select>
       </div>
-      <button class="stepper-btn" onmousedown="startHold(1)" onmouseup="stopHold()" onmouseleave="stopHold()" ontouchstart="startHold(1)" ontouchend="stopHold()">+</button>
-    </div>
-    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center">
-      <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">Quick:</span>
-      <button class="quick-btn" onclick="setCopies(10)">10</button>
-      <button class="quick-btn" onclick="setCopies(20)">20</button>
-      <button class="quick-btn" onclick="setCopies(50)">50</button>
-      <button class="quick-btn" onclick="setCopies(100)">100</button>
-      <button class="quick-btn" onclick="setCopies(200)">200</button>
-      <button class="quick-btn" onclick="setCopies(400)">400</button>
-    </div>
 
-    <label>Paper type</label>
-    <div class="toggle-group">
-      <button class="toggle-btn selected" onclick="selectPaper(this,'A4 Standard')">A4 Standard</button>
-      <button class="toggle-btn" onclick="selectPaper(this,'A4 Glossy')">A4 Glossy</button>
-      <button class="toggle-btn" onclick="selectPaper(this,'A3 Standard')">A3 Standard</button>
-      <button class="toggle-btn" onclick="selectPaper(this,'Legal Size')">Legal Size</button>
-    </div>
-
-    <label>Print sides</label>
-    <div class="toggle-group">
-      <button class="toggle-btn selected" onclick="selectSide(this,'Single sided')">Single sided</button>
-      <button class="toggle-btn" onclick="selectSide(this,'Double sided')">Double sided</button>
-    </div>
-
-    <label>Upload document or image</label>
-    <div class="upload-zone" id="upload-zone">
-      <input type="file" id="file-input" accept=".doc,.docx,.xls,.xlsx,.ppt,.pptx,.pdf,.txt,.rtf,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp" onchange="handleFile(this)">
-      <div class="upload-icon">📎</div>
-      <div class="upload-main">Tap to upload your file</div>
-      <div class="upload-sub">.doc .docx .xls .xlsx .ppt .pptx .pdf .txt .rtf<br>.jpg .jpeg .png .gif .bmp .tiff .webp</div>
-    </div>
-    <div class="upload-success" id="upload-success">
-      <span class="u-file-icon" id="file-icon">📄</span>
-      <div class="u-file-info">
-        <div class="u-file-name" id="file-name-display"></div>
-        <div class="u-file-size" id="file-size-display"></div>
-      </div>
-      <span class="upload-remove" onclick="removeFile()">✕</span>
-    </div>
-
-    <div class="cost-box">
-      <div class="cost-left">
-        <div class="cost-label">Print summary</div>
-        <div class="cost-note" id="cost-note">2 copies · A4 Standard · Single sided</div>
-      </div>
-    </div>
-
-    <div class="error-msg" id="err1">Please select a kiosk location and upload your file.</div>
-    <button class="btn-primary" onclick="goStep(2)">Continue to contact info →</button>
-  </div>
-
-  <!-- STEP 2 -->
-  <div class="section" id="step2">
-    <div class="section-title">Your contact details</div>
-    <label for="student-id">Student ID number</label>
-    <input type="text" id="student-id" placeholder="e.g. R123456Y">
-    <label for="email">Email address</label>
-    <input type="email" id="email" placeholder="you@example.com">
-    <label for="phone">Phone number</label>
-    <input type="tel" id="phone" placeholder="07X XXX XXXX">
-
-    <div class="tc-row" style="margin-top:18px">
-      <input type="checkbox" id="tc-check">
-      <div class="tc-text">I confirm my print details are correct and agree to the <a onclick="alert('Prints are non-refundable once submitted. Collect within 2 hours. CampusPrint is not liable for files incompatible with the printer.')">Terms &amp; Conditions</a>.</div>
-    </div>
-
-    <div class="error-msg" id="err2">Please enter your student ID, a valid email and phone number, and accept the Terms &amp; Conditions.</div>
-    <button class="btn-primary" id="checkout-btn" onclick="checkout()">
-      <span>Submit print request</span><span>→</span>
-    </button>
-    <button class="btn-outline" onclick="goStep(1)">← Back</button>
-  </div>
-</main>
-
-<!-- RECEIPT -->
-<div id="receipt-screen">
-  <main>
-    <div class="receipt-card">
-      <div class="receipt-header">
-        <div class="receipt-check">✓</div>
-        <h2>Print Confirmed!</h2>
-        <p id="receipt-time"></p>
-      </div>
-      <div class="receipt-body">
-        <div class="job-number">
-          <div class="jn-label">Print job number</div>
-          <div class="jn-code" id="job-number"></div>
-          <div class="jn-hint">Show this at the kiosk to collect your prints</div>
+      <div class="field">
+        <label class="field__label">Number of copies</label>
+        <div class="copies">
+          <button type="button" class="stepper" aria-label="Decrease copies"
+            onpointerdown="startHold(-1)" onpointerup="stopHold()" onpointerleave="stopHold()" onpointercancel="stopHold()"
+            onclick="stepCopies(-1)">
+            <svg class="icon-sm"><use href="#i-minus"/></svg>
+          </button>
+          <input type="number" id="copies-input" class="copies__value" min="2" max="400" value="2"
+            inputmode="numeric" aria-label="Number of copies"
+            oninput="onCopiesInput(this)" onblur="onCopiesBlur(this)">
+          <button type="button" class="stepper" aria-label="Increase copies"
+            onpointerdown="startHold(1)" onpointerup="stopHold()" onpointerleave="stopHold()" onpointercancel="stopHold()"
+            onclick="stepCopies(1)">
+            <svg class="icon-sm"><use href="#i-plus"/></svg>
+          </button>
         </div>
-        <div class="receipt-row"><span class="r-label">STUDENT ID</span><span class="r-value" id="r-studentid"></span></div>
-        <div class="receipt-row"><span class="r-label">FILE</span><span class="r-value" id="r-file"></span></div>
-        <div class="receipt-row"><span class="r-label">KIOSK</span><span class="r-value" id="r-location"></span></div>
-        <div class="receipt-row"><span class="r-label">COPIES</span><span class="r-value" id="r-copies"></span></div>
-        <div class="receipt-row"><span class="r-label">PAPER</span><span class="r-value" id="r-paper"></span></div>
-        <div class="receipt-row"><span class="r-label">SIDES</span><span class="r-value" id="r-sides"></span></div>
-        <div class="receipt-row"><span class="r-label">STATUS</span><span class="r-value green">✓ Sent to printer</span></div>
-        <hr class="receipt-divider">
-        <div class="receipt-row"><span class="r-label">EMAIL</span><span class="r-value" id="r-email"></span></div>
-        <div class="receipt-row"><span class="r-label">PHONE</span><span class="r-value" id="r-phone"></span></div>
-        <div class="receipt-row"><span class="r-label">TIME</span><span class="r-value" id="r-printtime"></span></div>
+        <div class="copies__quick">
+          <span class="quick-label">Quick</span>
+          <button type="button" class="quick" onclick="setCopies(10)">10</button>
+          <button type="button" class="quick" onclick="setCopies(20)">20</button>
+          <button type="button" class="quick" onclick="setCopies(50)">50</button>
+          <button type="button" class="quick" onclick="setCopies(100)">100</button>
+          <button type="button" class="quick" onclick="setCopies(200)">200</button>
+          <button type="button" class="quick" onclick="setCopies(400)">400</button>
+        </div>
+        <div class="field__hint">Between 2 and 400 copies per job.</div>
+      </div>
+
+      <div class="field">
+        <label class="field__label">Paper type</label>
+        <div class="toggle-group toggle-group--four" role="radiogroup" aria-label="Paper type">
+          <button type="button" class="toggle is-selected" role="radio" aria-checked="true" onclick="selectPaper(this,'A4 Standard')">
+            <svg class="toggle__check"><use href="#i-check"/></svg>A4 Standard
+          </button>
+          <button type="button" class="toggle" role="radio" aria-checked="false" onclick="selectPaper(this,'A4 Glossy')">
+            <svg class="toggle__check"><use href="#i-check"/></svg>A4 Glossy
+          </button>
+          <button type="button" class="toggle" role="radio" aria-checked="false" onclick="selectPaper(this,'A3 Standard')">
+            <svg class="toggle__check"><use href="#i-check"/></svg>A3 Standard
+          </button>
+          <button type="button" class="toggle" role="radio" aria-checked="false" onclick="selectPaper(this,'Legal Size')">
+            <svg class="toggle__check"><use href="#i-check"/></svg>Legal
+          </button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field__label">Print sides</label>
+        <div class="toggle-group" role="radiogroup" aria-label="Print sides">
+          <button type="button" class="toggle is-selected" role="radio" aria-checked="true" onclick="selectSide(this,'Single sided')">
+            <svg class="toggle__check"><use href="#i-check"/></svg>Single
+          </button>
+          <button type="button" class="toggle" role="radio" aria-checked="false" onclick="selectSide(this,'Double sided')">
+            <svg class="toggle__check"><use href="#i-check"/></svg>Double
+          </button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field__label">Upload document or image</label>
+        <div class="upload" id="upload-zone">
+          <input type="file" id="file-input" class="upload__input"
+            accept=".doc,.docx,.xls,.xlsx,.ppt,.pptx,.pdf,.txt,.rtf,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp"
+            onchange="handleFile(this)" aria-label="Upload print file">
+          <svg class="upload__icon"><use href="#i-upload"/></svg>
+          <div class="upload__main">Tap to upload your file</div>
+          <div class="upload__sub">PDF · Word · Excel · PowerPoint · Images up to 50MB</div>
+        </div>
+        <div class="upload-success" id="upload-success" style="margin-top:10px">
+          <div class="upload-success__icon"><svg class="icon"><use href="#i-file"/></svg></div>
+          <div class="upload-success__body">
+            <div class="upload-success__name" id="file-name-display"></div>
+            <div class="upload-success__size" id="file-size-display"></div>
+          </div>
+          <button type="button" class="upload-success__remove" onclick="removeFile()" aria-label="Remove file">
+            <svg class="icon-sm"><use href="#i-x"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="summary">
+        <svg class="summary__icon icon"><use href="#i-printer"/></svg>
+        <div>
+          <div class="summary__label">Print summary</div>
+          <div class="summary__text" id="cost-note">2 copies · A4 Standard · Single sided</div>
+        </div>
+      </div>
+
+      <div class="error" id="err1" role="alert">
+        <svg class="icon-sm"><use href="#i-alert"/></svg>
+        <span>Please select a kiosk location and upload your file.</span>
+      </div>
+
+      <button class="btn btn--primary" onclick="goStep(2)">
+        Continue to contact info
+        <svg class="icon"><use href="#i-arrow-right"/></svg>
+      </button>
+    </section>
+
+    <!-- STEP 2 -->
+    <section class="section" id="step2" aria-labelledby="t-step2">
+      <h2 class="section__title" id="t-step2">Contact details</h2>
+
+      <div class="field">
+        <label class="field__label" for="student-id">Student ID</label>
+        <input id="student-id" class="input" type="text" placeholder="e.g. R123456Y" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="email">Email address</label>
+        <input id="email" class="input" type="email" placeholder="you@university.edu" autocomplete="email" inputmode="email">
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="phone">Phone number</label>
+        <input id="phone" class="input" type="tel" placeholder="07X XXX XXXX" autocomplete="tel" inputmode="tel">
+      </div>
+
+      <label class="tc">
+        <span class="tc__check">
+          <input type="checkbox" id="tc-check">
+          <span class="tc__check-box"><svg><use href="#i-check"/></svg></span>
+        </span>
+        <span class="tc__text">
+          I confirm my print details are correct and agree to the
+          <a onclick="alert('Prints are non-refundable once submitted. Collect within 2 hours. CampusPrint is not liable for files incompatible with the printer.')" tabindex="0">Terms &amp; Conditions</a>.
+        </span>
+      </label>
+
+      <div class="error" id="err2" role="alert">
+        <svg class="icon-sm"><use href="#i-alert"/></svg>
+        <span>Please complete every field and accept the Terms &amp; Conditions.</span>
+      </div>
+
+      <button class="btn btn--primary" id="checkout-btn" onclick="checkout()">
+        <span>Submit print request</span>
+        <svg class="icon"><use href="#i-arrow-right"/></svg>
+      </button>
+      <button class="btn btn--ghost" onclick="goStep(1)">
+        <svg class="icon"><use href="#i-arrow-left"/></svg>
+        Back
+      </button>
+    </section>
+
+    <!-- RECEIPT -->
+    <section class="receipt" id="receipt-screen" aria-labelledby="t-receipt">
+      <div class="receipt-card">
+        <div class="receipt__top">
+          <div class="receipt__check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m5 12 5 5L20 7"/>
+            </svg>
+          </div>
+          <h2 class="receipt__title" id="t-receipt">Print request submitted</h2>
+          <p class="receipt__time" id="receipt-time"></p>
+        </div>
+        <div class="receipt__body">
+          <div class="job-code">
+            <div class="job-code__label">Print job number</div>
+            <div class="job-code__value" id="job-number"></div>
+            <div class="job-code__hint">Show this at the kiosk to collect your prints</div>
+          </div>
+
+          <div class="receipt-row"><span class="receipt-row__label">Student ID</span><span class="receipt-row__value" id="r-studentid"></span></div>
+          <div class="receipt-row"><span class="receipt-row__label">File</span><span class="receipt-row__value" id="r-file"></span></div>
+          <div class="receipt-row"><span class="receipt-row__label">Kiosk</span><span class="receipt-row__value" id="r-location"></span></div>
+          <div class="receipt-row"><span class="receipt-row__label">Copies</span><span class="receipt-row__value" id="r-copies"></span></div>
+          <div class="receipt-row"><span class="receipt-row__label">Paper</span><span class="receipt-row__value" id="r-paper"></span></div>
+          <div class="receipt-row"><span class="receipt-row__label">Sides</span><span class="receipt-row__value" id="r-sides"></span></div>
+          <div class="receipt-row">
+            <span class="receipt-row__label">Status</span>
+            <span class="receipt-row__value receipt-row__value--ok">
+              <svg class="icon-sm"><use href="#i-check-circle"/></svg> Sent to printer
+            </span>
+          </div>
+          <div class="receipt-row"><span class="receipt-row__label">Email</span><span class="receipt-row__value" id="r-email"></span></div>
+          <div class="receipt-row"><span class="receipt-row__label">Phone</span><span class="receipt-row__value" id="r-phone"></span></div>
+          <div class="receipt-row"><span class="receipt-row__label">Collect</span><span class="receipt-row__value" id="r-printtime"></span></div>
+        </div>
+      </div>
+      <div class="receipt__actions">
+        <button class="btn btn--primary" onclick="window.print()">Save / Print receipt</button>
+        <button class="btn btn--ghost" onclick="resetApp()">Start new print job</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- RIGHT RAIL — desktop only -->
+  <aside class="rail-col" aria-label="Submission summary">
+    <div class="rail-card">
+      <div class="rail__eyebrow">CampusPrint</div>
+      <div class="rail__headline">Mobile print release for your campus.</div>
+      <div class="rail__body">
+        Submit a document, walk to any kiosk, collect within two hours.
+        Service costs are covered by your institution.
       </div>
     </div>
-    <button class="btn-primary" onclick="window.print()">Save / Print Receipt</button>
-    <button class="btn-outline" onclick="resetApp()">Start new print job</button>
-  </main>
+    <div class="rail-card">
+      <div class="rail__eyebrow">Submission preview</div>
+      <div class="rail__row">
+        <span class="rail__row-label">Kiosk</span>
+        <span class="rail__row-value rail__row-value--muted" id="rail-kiosk">Not selected</span>
+      </div>
+      <div class="rail__row">
+        <span class="rail__row-label">File</span>
+        <span class="rail__row-value rail__row-value--muted" id="rail-file">No file uploaded</span>
+      </div>
+      <div class="rail__divider"></div>
+      <div class="rail__row">
+        <span class="rail__row-label">Copies</span>
+        <span class="rail__row-value" id="rail-copies">2</span>
+      </div>
+      <div class="rail__row">
+        <span class="rail__row-label">Paper</span>
+        <span class="rail__row-value" id="rail-paper">A4 Standard</span>
+      </div>
+      <div class="rail__row">
+        <span class="rail__row-label">Sides</span>
+        <span class="rail__row-value" id="rail-sides">Single sided</span>
+      </div>
+    </div>
+  </aside>
 </div>
 
-<div class="footer-note">CampusPrint · Campus kiosk printing · Collect within 2 hours of confirmation</div>
+<div class="footer">
+  CampusPrint · Pre-alpha · Collect within 2 hours of confirmation
+</div>
 
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 /* ── SUPABASE ── */
-// Get these two values from:
-//   supabase.com → your project → Settings → API → Project URL & anon public key
-// The anon key is safe to ship in client-side code — Supabase Row-Level Security
-// (RLS) is the access-control layer, not the secrecy of this key.
-// Run the SQL in supabase/migrations/001_print_jobs.sql in the Supabase SQL editor first.
 const SUPABASE_URL  = 'https://dnfxqvnnufvggxbiahzq.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZnhxdm5udWZ2Z2d4YmlhaHpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMjkwNTEsImV4cCI6MjA5NDYwNTA1MX0.4mI_JMBPJs2ZcmQTwPI-cncVtrH3x525_LxFNnBmflQ';
 const db = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 /* ── STATE ── */
-// Path B note: `PAPER` rates kept ONLY for future institutional aggregate cost
-// reporting in Supabase. The student never sees a price — institutional billing
-// happens out-of-band at the contract level.
 let copies = 2, paperName = 'A4 Standard';
 let sides = 'Single sided', uploadedFile = null;
 let holdTimer = null, holdInterval = null;
 
-const ICONS = { doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',ppt:'📊',pptx:'📊',pdf:'📕',txt:'📄',rtf:'📄',jpg:'🖼',jpeg:'🖼',png:'🖼',gif:'🖼',bmp:'🖼',tiff:'🖼',webp:'🖼' };
+const ICONS = { doc:'file',docx:'file',xls:'file',xlsx:'file',ppt:'file',pptx:'file',pdf:'file',txt:'file',rtf:'file',jpg:'file',jpeg:'file',png:'file',gif:'file',bmp:'file',tiff:'file',webp:'file' };
 
 /* ── SUMMARY (no money — Path B) ── */
+const $ = id => document.getElementById(id);
 function updateSummary() {
-  document.getElementById('cost-note').textContent =
-    copies + ' copies · ' + paperName + ' · ' + sides;
-  document.getElementById('banner-rate').textContent =
-    paperName + ' · Print Service';
+  $('cost-note').textContent = copies + ' copies · ' + paperName + ' · ' + sides;
+  $('rail-copies') && ($('rail-copies').textContent = copies + ' copies');
+  $('rail-paper')  && ($('rail-paper').textContent  = paperName);
+  $('rail-sides')  && ($('rail-sides').textContent  = sides);
+}
+
+function syncRailKiosk() {
+  const v = $('location') ? $('location').value : '';
+  const el = $('rail-kiosk');
+  if (!el) return;
+  if (v) { el.textContent = v; el.classList.remove('rail__row-value--muted'); }
+  else   { el.textContent = 'Not selected'; el.classList.add('rail__row-value--muted'); }
+}
+
+function syncRailFile() {
+  const el = $('rail-file');
+  if (!el) return;
+  if (uploadedFile) { el.textContent = uploadedFile.name; el.classList.remove('rail__row-value--muted'); }
+  else              { el.textContent = 'No file uploaded'; el.classList.add('rail__row-value--muted'); }
 }
 
 /* ── COPIES ── */
-function setCopies(n) { copies = Math.min(400, Math.max(2, Math.round(n))); document.getElementById('copies-input').value = copies; updateSummary(); }
+// stepCopies fires on click (keyboard + mouse + touch all hit onclick after pointerup).
+// startHold/stopHold handle press-and-hold: timer doesn't fire until after the 380ms
+// hold threshold, so single clicks pass through to onclick without double-firing.
+let holdFired = false;
+function setCopies(n) { copies = Math.min(400, Math.max(2, Math.round(n))); $('copies-input').value = copies; updateSummary(); }
+function stepCopies(d) { if (holdFired) { holdFired = false; return; } setCopies(copies + d); }
 function onCopiesInput(el) { const v = parseInt(el.value); if (!isNaN(v)) { copies = Math.min(400, Math.max(2, v)); updateSummary(); } }
 function onCopiesBlur(el) { setCopies(parseInt(el.value) || 2); }
-function startHold(d) { setCopies(copies + d); holdTimer = setTimeout(() => { holdInterval = setInterval(() => setCopies(copies + d), 80); }, 400); }
+function startHold(d) {
+  holdTimer = setTimeout(() => {
+    holdFired = true;
+    setCopies(copies + d);
+    holdInterval = setInterval(() => setCopies(copies + d), 90);
+  }, 380);
+}
 function stopHold() { clearTimeout(holdTimer); clearInterval(holdInterval); }
 
 /* ── SELECTORS ── */
 function selectPaper(btn, name) {
-  btn.closest('.toggle-group').querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected'); paperName = name; updateSummary();
+  btn.closest('.toggle-group').querySelectorAll('.toggle').forEach(b => { b.classList.remove('is-selected'); b.setAttribute('aria-checked', 'false'); });
+  btn.classList.add('is-selected'); btn.setAttribute('aria-checked', 'true');
+  paperName = name; updateSummary();
 }
 function selectSide(btn, val) {
-  btn.closest('.toggle-group').querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected'); sides = val; updateSummary();
+  btn.closest('.toggle-group').querySelectorAll('.toggle').forEach(b => { b.classList.remove('is-selected'); b.setAttribute('aria-checked', 'false'); });
+  btn.classList.add('is-selected'); btn.setAttribute('aria-checked', 'true');
+  sides = val; updateSummary();
 }
 
 /* ── FILE ── */
@@ -337,39 +1128,42 @@ function handleFile(input) {
   const file = input.files[0]; if (!file) return;
   const ext = file.name.split('.').pop().toLowerCase();
   const ok = ['doc','docx','xls','xlsx','ppt','pptx','pdf','txt','rtf','jpg','jpeg','png','gif','bmp','tiff','webp'];
-  if (!ok.includes(ext)) { alert('Unsupported file type. Please upload a Microsoft 365 document or image file.'); input.value = ''; return; }
+  if (!ok.includes(ext)) { alert('Unsupported file type. Please upload a document or image file.'); input.value = ''; return; }
+  if (file.size > 50 * 1024 * 1024) { alert('File too large. 50 MB maximum.'); input.value = ''; return; }
   uploadedFile = file;
-  document.getElementById('file-icon').textContent         = ICONS[ext] || '📄';
-  document.getElementById('file-name-display').textContent = file.name;
-  document.getElementById('file-size-display').textContent = (file.size / 1048576).toFixed(2) + ' MB · ' + ext.toUpperCase();
-  document.getElementById('upload-success').classList.add('show');
-  document.getElementById('upload-zone').style.display = 'none';
+  $('file-name-display').textContent = file.name;
+  $('file-size-display').textContent = (file.size / 1048576).toFixed(2) + ' MB · ' + ext.toUpperCase();
+  $('upload-success').classList.add('is-visible');
+  $('upload-zone').style.display = 'none';
+  syncRailFile();
 }
 function removeFile() {
   uploadedFile = null;
-  const input = document.getElementById('file-input');
+  const input = $('file-input');
   input.value = '';
   input.type = 'text';
   input.type = 'file';
-  document.getElementById('upload-success').classList.remove('show');
-  document.getElementById('upload-zone').style.display = 'block';
+  $('upload-success').classList.remove('is-visible');
+  $('upload-zone').style.display = '';
+  syncRailFile();
 }
 
 /* ── ERRORS ── */
-function showErr(id, show) { document.getElementById(id).classList.toggle('show', show); }
+function showErr(id, show) { $(id).classList.toggle('is-visible', show); }
 
 /* ── NAVIGATION (2 form steps + receipt) ── */
 function goStep(step) {
   if (step === 2) {
-    if (!document.getElementById('location').value || !uploadedFile) { showErr('err1', true); return; }
+    if (!$('location').value || !uploadedFile) { showErr('err1', true); return; }
     showErr('err1', false);
   }
-  ['step1','step2'].forEach((id, i) => document.getElementById(id).classList.toggle('visible', i + 1 === step));
+  ['step1','step2'].forEach((id, i) => $(id).classList.toggle('is-visible', i + 1 === step));
   for (let i = 1; i <= 3; i++) {
-    document.getElementById('pd' + i).classList.toggle('active', i === step);
-    document.getElementById('pd' + i).classList.toggle('done',   i < step);
+    const psEl = $('ps' + i);
+    psEl.classList.toggle('is-active', i === step);
+    psEl.classList.toggle('is-done',   i < step);
   }
-  for (let i = 1; i <= 2; i++) document.getElementById('pl' + i).classList.toggle('done', i < step);
+  for (let i = 1; i <= 2; i++) $('pl' + i).classList.toggle('is-done', i < step);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -390,32 +1184,33 @@ async function saveJob(data) {
       collect_by:     data.collectBy,
       status:         'pending',
     });
-  if (error) {
-    console.error('Supabase insert failed:', error.message, error.code);
-    return false;
-  }
+  if (error) { console.error('Supabase insert failed:', error.message, error.code); return false; }
   return true;
 }
 
 /* ── JOB NUMBER ── */
 function genJob() {
   const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let j = 'CP-';
-  for (let i = 0; i < 6; i++) j += c[Math.floor(Math.random() * c.length)];
+  // Use crypto-grade randomness — replaces Math.random()
+  const bytes = new Uint8Array(6);
+  (window.crypto || window.msCrypto).getRandomValues(bytes);
+  for (let i = 0; i < 6; i++) j += c[bytes[i] % c.length];
   return j;
 }
 
-/* ── CHECKOUT (called from step 2 — no payment step in Path B) ── */
+/* ── CHECKOUT ── */
 async function checkout() {
-  const sid = document.getElementById('student-id').value.trim();
-  const em  = document.getElementById('email').value;
-  const ph  = document.getElementById('phone').value;
-  const tc  = document.getElementById('tc-check').checked;
+  const sid = $('student-id').value.trim();
+  const em  = $('email').value;
+  const ph  = $('phone').value;
+  const tc  = $('tc-check').checked;
   if (!sid || !em.includes('@') || ph.length < 9 || !tc) { showErr('err2', true); return; }
   showErr('err2', false);
 
-  const btn = document.getElementById('checkout-btn');
+  const btn = $('checkout-btn');
   btn.disabled = true;
-  btn.innerHTML = '<span>Submitting...</span><span style="display:inline-block;animation:spin 1s linear infinite">⟳</span>';
+  btn.classList.add('btn--spinner');
+  btn.innerHTML = '<span>Submitting…</span><svg class="icon"><use href="#i-loader"/></svg>';
 
   try {
     const now     = new Date();
@@ -426,7 +1221,7 @@ async function checkout() {
     const jobNum  = genJob();
 
     const data = {
-      jobNum, location: document.getElementById('location').value,
+      jobNum, location: $('location').value,
       studentId: sid, email: em, phone: ph,
       copies, paper: paperName, sides,
       fileName: uploadedFile ? uploadedFile.name : '—',
@@ -453,25 +1248,31 @@ async function checkout() {
       })
     }).catch(e => console.warn('Email notification failed:', e));
 
-    document.getElementById('receipt-time').textContent  = 'Submitted ' + fullDT;
-    document.getElementById('job-number').textContent    = jobNum;
-    document.getElementById('r-studentid').textContent   = data.studentId;
-    document.getElementById('r-file').textContent        = data.fileName;
-    document.getElementById('r-location').textContent    = data.location;
-    document.getElementById('r-copies').textContent      = copies + ' copies';
-    document.getElementById('r-paper').textContent       = paperName;
-    document.getElementById('r-sides').textContent       = sides;
-    document.getElementById('r-email').textContent       = data.email;
-    document.getElementById('r-phone').textContent       = data.phone;
-    document.getElementById('r-printtime').textContent   = fullDT + ' · Collect by ' + collect;
+    $('receipt-time').textContent = 'Submitted ' + fullDT;
+    $('job-number').textContent   = jobNum;
+    $('r-studentid').textContent  = data.studentId;
+    $('r-file').textContent       = data.fileName;
+    $('r-location').textContent   = data.location;
+    $('r-copies').textContent     = copies + ' copies';
+    $('r-paper').textContent      = paperName;
+    $('r-sides').textContent      = sides;
+    $('r-email').textContent      = data.email;
+    $('r-phone').textContent      = data.phone;
+    $('r-printtime').textContent  = 'By ' + collect + ' today';
 
-    // mark "Done" dot complete
-    document.getElementById('pd3').classList.remove('active');
-    document.getElementById('pd3').classList.add('done');
-    document.getElementById('pl2').classList.add('done');
-    ['step1','step2'].forEach(id => document.getElementById(id).classList.remove('visible'));
-    document.getElementById('receipt-screen').classList.add('visible');
-    document.getElementById('progress-wrap').style.display = 'none';
+    // mark "Done" step complete
+    for (let i = 1; i <= 3; i++) {
+      $('ps' + i).classList.remove('is-active');
+      $('ps' + i).classList.add('is-done');
+    }
+    for (let i = 1; i <= 2; i++) $('pl' + i).classList.add('is-done');
+
+    ['step1','step2'].forEach(id => $(id).classList.remove('is-visible'));
+    $('receipt-screen').classList.add('is-visible');
+
+    // subtle haptic on capable mobile devices
+    if (navigator.vibrate) navigator.vibrate(12);
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
   } catch(e) {
@@ -479,7 +1280,8 @@ async function checkout() {
     alert(e.message || 'Something went wrong. Please try again.');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<span>Submit print request</span><span>→</span>';
+    btn.classList.remove('btn--spinner');
+    btn.innerHTML = '<span>Submit print request</span><svg class="icon"><use href="#i-arrow-right"/></svg>';
   }
 }
 
@@ -487,28 +1289,38 @@ async function checkout() {
 function resetApp() {
   copies = 2; paperName = 'A4 Standard';
   sides = 'Single sided'; uploadedFile = null;
-  ['location','student-id','email','phone'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('copies-input').value = '2';
-  document.getElementById('tc-check').checked = false;
+  ['location','student-id','email','phone'].forEach(id => $(id).value = '');
+  $('copies-input').value = '2';
+  $('tc-check').checked = false;
   document.querySelectorAll('.toggle-group').forEach(g =>
-    g.querySelectorAll('.toggle-btn').forEach((b, i) => b.classList.toggle('selected', i === 0))
+    g.querySelectorAll('.toggle').forEach((b, i) => {
+      b.classList.toggle('is-selected', i === 0);
+      b.setAttribute('aria-checked', i === 0 ? 'true' : 'false');
+    })
   );
-  removeFile(); updateSummary();
-  document.getElementById('receipt-screen').classList.remove('visible');
-  document.getElementById('progress-wrap').style.display = 'block';
+  removeFile(); updateSummary(); syncRailKiosk();
+  $('receipt-screen').classList.remove('is-visible');
   for (let i = 1; i <= 3; i++) {
-    document.getElementById('pd' + i).classList.remove('active', 'done');
-    if (i === 1) document.getElementById('pd1').classList.add('active');
+    $('ps' + i).classList.remove('is-active', 'is-done');
+    if (i === 1) $('ps1').classList.add('is-active');
   }
-  for (let i = 1; i <= 2; i++) document.getElementById('pl' + i).classList.remove('done');
-  ['step1','step2'].forEach((id, i) => document.getElementById(id).classList.toggle('visible', i === 0));
+  for (let i = 1; i <= 2; i++) $('pl' + i).classList.remove('is-done');
+  ['step1','step2'].forEach((id, i) => $(id).classList.toggle('is-visible', i === 0));
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+/* ── Wire kiosk change to rail ── */
+$('location').addEventListener('change', syncRailKiosk);
+
 /* ── EXPOSE TO HTML ── */
-Object.assign(window, { setCopies, onCopiesInput, onCopiesBlur, startHold, stopHold, selectPaper, selectSide, handleFile, removeFile, goStep, checkout, resetApp });
+Object.assign(window, {
+  setCopies, stepCopies, onCopiesInput, onCopiesBlur, startHold, stopHold,
+  selectPaper, selectSide, handleFile, removeFile,
+  goStep, checkout, resetApp
+});
 
 updateSummary();
 </script>
+
 </body>
 </html>
