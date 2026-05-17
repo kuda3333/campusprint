@@ -69,7 +69,7 @@ These were flagged CRITICAL or HIGH by Seat 3 and are **not yet fixed**:
 | ID | Severity | Issue | Fix |
 |---|---|---|---|
 | V4 | CRITICAL | Firestore default-open posture in the shared salon project (`saloon-booking-ce824`) | Rotate API key in Firebase Console, create `campusprint-prod` project, deploy `firestore.rules` |
-| V5 | CRITICAL | Receipt UI claims "PAID" without payment-provider webhook verification — `index.html:562`. **Fraud-adjacent.** | Either remove payment from the UX entirely (Path B), or integrate Stripe Checkout and only render receipt on signed-webhook |
+| ~~V5~~ | ~~CRITICAL~~ | ✅ **FIXED 2026-05-17 by deletion.** Path B removed the payment step from the student flow entirely. The "PAID" claim, the payment-platform selector, the cost banner, and the `payment_method`/`amount_paid` DB columns are all gone. Institutional billing happens out-of-band at the contract level. (Migration `supabase/migrations/002_path_b_drop_payment.sql`.) | — |
 | V6 | HIGH | Student ID is a free-text field — impersonation by design | Auth.js + Entra ID / Google / SAML (Path B requires this) |
 | V9 | HIGH | Firebase web config + project name `saloon-booking-ce824` is shipped to the browser, leaking that student PII and salon-customer PII are co-mingled | New dedicated Firebase project; rotate the leaked key |
 | V11–V17 | MED/LOW | PII leak in logs (`console.error` in send-email.js, `alert(e.code)` in index.html); missing security headers; predictable job-number RNG; silent email-fail | All tracked for next P0 sweep |

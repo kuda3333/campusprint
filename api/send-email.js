@@ -41,9 +41,9 @@ function clean(v) {
 
 function validatePrintJob(data) {
   if (!data || typeof data !== 'object') return 'data must be an object';
+  // Path B: payment + amount removed — institutional billing happens out-of-band.
   const required = ['jobNum', 'location', 'studentId', 'email', 'phone',
-                    'copies', 'paper', 'sides', 'payment', 'amount',
-                    'fileName', 'collectBy'];
+                    'copies', 'paper', 'sides', 'fileName', 'collectBy'];
   for (const k of required) {
     if (!(k in data)) return `missing field: ${k}`;
     if (typeof data[k] !== 'string' && typeof data[k] !== 'number') {
@@ -105,8 +105,6 @@ module.exports = async function handler(req, res) {
     copies:    escapeHtml(clean(data.copies)),
     paper:     escapeHtml(clean(data.paper)),
     sides:     escapeHtml(clean(data.sides)),
-    payment:   escapeHtml(clean(data.payment)),
-    amount:    escapeHtml(clean(data.amount)),
     email:     escapeHtml(clean(data.email)),
     phone:     escapeHtml(clean(data.phone)),
     collectBy: escapeHtml(clean(data.collectBy)),
@@ -130,7 +128,6 @@ module.exports = async function handler(req, res) {
         <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-family:monospace;font-size:11px">STUDENT ID</td><td style="padding:8px 12px;font-weight:600;text-align:right;border-bottom:1px solid #ddd9cf">${e.studentId}</td></tr>
         <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-family:monospace;font-size:11px">FILE</td><td style="padding:8px 12px;font-weight:600;text-align:right;border-bottom:1px solid #ddd9cf">${e.fileName}</td></tr>
         <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-family:monospace;font-size:11px">COPIES</td><td style="padding:8px 12px;font-weight:600;text-align:right;border-bottom:1px solid #ddd9cf">${e.copies} copies · ${e.paper} · ${e.sides}</td></tr>
-        <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-family:monospace;font-size:11px">PAYMENT</td><td style="padding:8px 12px;font-weight:600;text-align:right;border-bottom:1px solid #ddd9cf">${e.payment} — ${e.amount}</td></tr>
         <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-family:monospace;font-size:11px">COLLECT BY</td><td style="padding:8px 12px;font-weight:600;text-align:right;border-bottom:1px solid #ddd9cf">${e.collectBy}</td></tr>
         <tr><td style="padding:8px 12px;color:#6b6b6b;font-family:monospace;font-size:11px">CONTACT</td><td style="padding:8px 12px;font-weight:600;text-align:right">${e.email} · ${e.phone}</td></tr>
       </table>
@@ -152,7 +149,6 @@ module.exports = async function handler(req, res) {
         <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-size:11px">Kiosk</td><td style="padding:8px 12px;font-weight:600;text-align:right;border-bottom:1px solid #ddd9cf">${e.location}</td></tr>
         <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-size:11px">File</td><td style="padding:8px 12px;font-weight:600;text-align:right;border-bottom:1px solid #ddd9cf">${e.fileName}</td></tr>
         <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-size:11px">Copies</td><td style="padding:8px 12px;font-weight:600;text-align:right;border-bottom:1px solid #ddd9cf">${e.copies} × ${e.paper} · ${e.sides}</td></tr>
-        <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-size:11px">Amount Paid</td><td style="padding:8px 12px;font-weight:700;text-align:right;border-bottom:1px solid #ddd9cf;color:#1a6b3c">${e.amount}</td></tr>
         <tr><td style="padding:8px 12px;color:#6b6b6b;font-size:11px">Collect By</td><td style="padding:8px 12px;font-weight:600;text-align:right">${e.collectBy}</td></tr>
       </table>
       <p style="margin-top:16px;font-size:13px;color:#6b6b6b">Collect your prints within <strong>2 hours</strong>. If you have any issues contact us immediately.</p>

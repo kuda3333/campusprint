@@ -140,9 +140,7 @@ input[type="number"]:focus { border-color:var(--accent); }
     <div class="p-line" id="pl1"></div>
     <div class="p-step"><div class="p-dot" id="pd2">2</div><div class="p-label">Contact</div></div>
     <div class="p-line" id="pl2"></div>
-    <div class="p-step"><div class="p-dot" id="pd3">3</div><div class="p-label">Payment</div></div>
-    <div class="p-line" id="pl3"></div>
-    <div class="p-step"><div class="p-dot" id="pd4">4</div><div class="p-label">Receipt</div></div>
+    <div class="p-step"><div class="p-dot" id="pd3">3</div><div class="p-label">Done</div></div>
   </div>
 </div>
 
@@ -150,8 +148,8 @@ input[type="number"]:focus { border-color:var(--accent); }
   <div class="price-banner">
     <div class="price-icon">🖨</div>
     <div class="price-text">
-      <strong id="banner-rate">A4 Standard — 10c per copy</strong>
-      <span>Min: 2 copies · Max: 400 copies · All kiosks</span>
+      <strong id="banner-rate">A4 Standard · Print Service</strong>
+      <span>Covered by your institution · Min 2 · Max 400 copies</span>
     </div>
   </div>
 
@@ -189,21 +187,11 @@ input[type="number"]:focus { border-color:var(--accent); }
 
     <label>Paper type</label>
     <div class="toggle-group">
-      <button class="toggle-btn selected" onclick="selectPaper(this,'A4 Standard',1.00)">A4 Standard</button>
-      <button class="toggle-btn" onclick="selectPaper(this,'A4 Glossy',1.80)">A4 Glossy</button>
-      <button class="toggle-btn" onclick="selectPaper(this,'A3 Standard',2.00)">A3 Standard</button>
-      <button class="toggle-btn" onclick="selectPaper(this,'Legal Size',1.50)">Legal Size</button>
+      <button class="toggle-btn selected" onclick="selectPaper(this,'A4 Standard')">A4 Standard</button>
+      <button class="toggle-btn" onclick="selectPaper(this,'A4 Glossy')">A4 Glossy</button>
+      <button class="toggle-btn" onclick="selectPaper(this,'A3 Standard')">A3 Standard</button>
+      <button class="toggle-btn" onclick="selectPaper(this,'Legal Size')">Legal Size</button>
     </div>
-
-    <table class="price-table">
-      <thead><tr><th>Paper type</th><th>Per copy</th><th>Your total</th></tr></thead>
-      <tbody>
-        <tr class="active-row" id="ptr-a4s"><td>A4 Standard</td><td class="rate">10c</td><td class="rate" id="ptc-a4s">20c</td></tr>
-        <tr id="ptr-a4g"><td>A4 Glossy</td><td class="rate">18c</td><td class="rate" id="ptc-a4g">36c</td></tr>
-        <tr id="ptr-a3s"><td>A3 Standard</td><td class="rate">20c</td><td class="rate" id="ptc-a3s">40c</td></tr>
-        <tr id="ptr-leg"><td>Legal Size</td><td class="rate">15c</td><td class="rate" id="ptc-leg">30c</td></tr>
-      </tbody>
-    </table>
 
     <label>Print sides</label>
     <div class="toggle-group">
@@ -229,10 +217,9 @@ input[type="number"]:focus { border-color:var(--accent); }
 
     <div class="cost-box">
       <div class="cost-left">
-        <div class="cost-label">Estimated total</div>
-        <div class="cost-note" id="cost-note">2 copies × 10c each</div>
+        <div class="cost-label">Print summary</div>
+        <div class="cost-note" id="cost-note">2 copies · A4 Standard · Single sided</div>
       </div>
-      <div class="cost-amount" id="cost-display">20c</div>
     </div>
 
     <div class="error-msg" id="err1">Please select a kiosk location and upload your file.</div>
@@ -248,42 +235,17 @@ input[type="number"]:focus { border-color:var(--accent); }
     <input type="email" id="email" placeholder="you@example.com">
     <label for="phone">Phone number</label>
     <input type="tel" id="phone" placeholder="07X XXX XXXX">
-    <div class="error-msg" id="err2">Please enter your student ID, a valid email and phone number.</div>
-    <button class="btn-primary" onclick="goStep(3)">Continue to payment →</button>
-    <button class="btn-outline" onclick="goStep(1)">← Back</button>
-  </div>
 
-  <!-- STEP 3 -->
-  <div class="section" id="step3">
-    <div class="section-title">Payment</div>
-    <label>Choose payment platform</label>
-    <div class="payment-grid">
-      <button class="pay-btn eco" onclick="selectPay(this,'EcoCash')">
-        <span class="pay-name">EcoCash</span><span class="pay-sub">Mobile money</span>
-      </button>
-      <button class="pay-btn inn" onclick="selectPay(this,'InnBucks')">
-        <span class="pay-name">InnBucks</span><span class="pay-sub">Mobile money</span>
-      </button>
-      <button class="pay-btn vis" onclick="selectPay(this,'Visa')">
-        <span class="pay-name">Visa</span><span class="pay-sub">Card payment</span>
-      </button>
-    </div>
-    <div class="cost-box" style="margin-top:16px">
-      <div class="cost-left">
-        <div class="cost-label">Total to pay</div>
-        <div class="cost-note" id="cost-note2"></div>
-      </div>
-      <div class="cost-amount" id="cost-display2">20c</div>
-    </div>
-    <div class="tc-row" style="margin-top:14px">
+    <div class="tc-row" style="margin-top:18px">
       <input type="checkbox" id="tc-check">
-      <div class="tc-text">I agree to the <a onclick="alert('Prints are non-refundable once confirmed. Collect within 2 hours. CampusPrint is not liable for files incompatible with the printer.')">Terms & Conditions</a>. I confirm my print details are correct and payment will be processed immediately.</div>
+      <div class="tc-text">I confirm my print details are correct and agree to the <a onclick="alert('Prints are non-refundable once submitted. Collect within 2 hours. CampusPrint is not liable for files incompatible with the printer.')">Terms &amp; Conditions</a>.</div>
     </div>
-    <div class="error-msg" id="err3">Please select a payment platform and accept the Terms & Conditions.</div>
+
+    <div class="error-msg" id="err2">Please enter your student ID, a valid email and phone number, and accept the Terms &amp; Conditions.</div>
     <button class="btn-primary" id="checkout-btn" onclick="checkout()">
-      <span>Checkout & Confirm Print</span><span>→</span>
+      <span>Submit print request</span><span>→</span>
     </button>
-    <button class="btn-outline" onclick="goStep(2)">← Back</button>
+    <button class="btn-outline" onclick="goStep(1)">← Back</button>
   </div>
 </main>
 
@@ -312,8 +274,6 @@ input[type="number"]:focus { border-color:var(--accent); }
         <hr class="receipt-divider">
         <div class="receipt-row"><span class="r-label">EMAIL</span><span class="r-value" id="r-email"></span></div>
         <div class="receipt-row"><span class="r-label">PHONE</span><span class="r-value" id="r-phone"></span></div>
-        <div class="receipt-row"><span class="r-label">PAYMENT</span><span class="r-value" id="r-payment"></span></div>
-        <div class="receipt-row"><span class="r-label">AMOUNT PAID</span><span class="r-value green" id="r-amount"></span></div>
         <div class="receipt-row"><span class="r-label">TIME</span><span class="r-value" id="r-printtime"></span></div>
       </div>
     </div>
@@ -338,55 +298,38 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const db = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 /* ── STATE ── */
-let copies = 2, paperRate = 1.00, paperName = 'A4 Standard';
-let sides = 'Single sided', payment = '', uploadedFile = null;
+// Path B note: `PAPER` rates kept ONLY for future institutional aggregate cost
+// reporting in Supabase. The student never sees a price — institutional billing
+// happens out-of-band at the contract level.
+let copies = 2, paperName = 'A4 Standard';
+let sides = 'Single sided', uploadedFile = null;
 let holdTimer = null, holdInterval = null;
 
-const PAPER = {
-  'A4 Standard': { rate: 1.00, id: 'a4s' },
-  'A4 Glossy':   { rate: 1.80, id: 'a4g' },
-  'A3 Standard': { rate: 2.00, id: 'a3s' },
-  'Legal Size':  { rate: 1.50, id: 'leg' }
-};
 const ICONS = { doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',ppt:'📊',pptx:'📊',pdf:'📕',txt:'📄',rtf:'📄',jpg:'🖼',jpeg:'🖼',png:'🖼',gif:'🖼',bmp:'🖼',tiff:'🖼',webp:'🖼' };
 
-/* ── MONEY ── */
-function perCopy() { return paperRate / 10; }
-function calcCost() { return copies * perCopy(); }
-function fmt(n) { return n < 1 ? Math.round(n * 100) + 'c' : '$' + n.toFixed(2); }
-
-function updateCost() {
-  const cost = calcCost(), note = copies + ' copies × ' + fmt(perCopy()) + ' each';
-  document.getElementById('cost-display').textContent  = fmt(cost);
-  document.getElementById('cost-display2').textContent = fmt(cost);
-  document.getElementById('cost-note').textContent     = note;
-  document.getElementById('cost-note2').textContent    = note;
-  document.getElementById('banner-rate').textContent   = paperName + ' — ' + fmt(perCopy()) + ' per copy';
-  Object.entries(PAPER).forEach(([name, p]) => {
-    document.getElementById('ptc-' + p.id).textContent = fmt(copies * (p.rate / 10));
-    document.getElementById('ptr-' + p.id).classList.toggle('active-row', name === paperName);
-  });
+/* ── SUMMARY (no money — Path B) ── */
+function updateSummary() {
+  document.getElementById('cost-note').textContent =
+    copies + ' copies · ' + paperName + ' · ' + sides;
+  document.getElementById('banner-rate').textContent =
+    paperName + ' · Print Service';
 }
 
 /* ── COPIES ── */
-function setCopies(n) { copies = Math.min(400, Math.max(2, Math.round(n))); document.getElementById('copies-input').value = copies; updateCost(); }
-function onCopiesInput(el) { const v = parseInt(el.value); if (!isNaN(v)) { copies = Math.min(400, Math.max(2, v)); updateCost(); } }
+function setCopies(n) { copies = Math.min(400, Math.max(2, Math.round(n))); document.getElementById('copies-input').value = copies; updateSummary(); }
+function onCopiesInput(el) { const v = parseInt(el.value); if (!isNaN(v)) { copies = Math.min(400, Math.max(2, v)); updateSummary(); } }
 function onCopiesBlur(el) { setCopies(parseInt(el.value) || 2); }
 function startHold(d) { setCopies(copies + d); holdTimer = setTimeout(() => { holdInterval = setInterval(() => setCopies(copies + d), 80); }, 400); }
 function stopHold() { clearTimeout(holdTimer); clearInterval(holdInterval); }
 
 /* ── SELECTORS ── */
-function selectPaper(btn, name, rate) {
+function selectPaper(btn, name) {
   btn.closest('.toggle-group').querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected'); paperName = name; paperRate = rate; updateCost();
+  btn.classList.add('selected'); paperName = name; updateSummary();
 }
 function selectSide(btn, val) {
   btn.closest('.toggle-group').querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected'); sides = val;
-}
-function selectPay(btn, val) {
-  document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected'); payment = val;
+  btn.classList.add('selected'); sides = val; updateSummary();
 }
 
 /* ── FILE ── */
@@ -406,7 +349,6 @@ function removeFile() {
   uploadedFile = null;
   const input = document.getElementById('file-input');
   input.value = '';
-  // Force browser to clear cached file so onchange fires even if same file re-selected
   input.type = 'text';
   input.type = 'file';
   document.getElementById('upload-success').classList.remove('show');
@@ -416,25 +358,18 @@ function removeFile() {
 /* ── ERRORS ── */
 function showErr(id, show) { document.getElementById(id).classList.toggle('show', show); }
 
-/* ── NAVIGATION ── */
+/* ── NAVIGATION (2 form steps + receipt) ── */
 function goStep(step) {
   if (step === 2) {
     if (!document.getElementById('location').value || !uploadedFile) { showErr('err1', true); return; }
     showErr('err1', false);
   }
-  if (step === 3) {
-    const sid = document.getElementById('student-id').value.trim();
-    const em  = document.getElementById('email').value;
-    const ph  = document.getElementById('phone').value;
-    if (!sid || !em.includes('@') || ph.length < 9) { showErr('err2', true); return; }
-    showErr('err2', false); updateCost();
-  }
-  ['step1','step2','step3'].forEach((id, i) => document.getElementById(id).classList.toggle('visible', i + 1 === step));
-  for (let i = 1; i <= 4; i++) {
+  ['step1','step2'].forEach((id, i) => document.getElementById(id).classList.toggle('visible', i + 1 === step));
+  for (let i = 1; i <= 3; i++) {
     document.getElementById('pd' + i).classList.toggle('active', i === step);
     document.getElementById('pd' + i).classList.toggle('done',   i < step);
   }
-  for (let i = 1; i <= 3; i++) document.getElementById('pl' + i).classList.toggle('done', i < step);
+  for (let i = 1; i <= 2; i++) document.getElementById('pl' + i).classList.toggle('done', i < step);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -451,8 +386,6 @@ async function saveJob(data) {
       copies:         Number(data.copies),
       paper_type:     data.paper,
       print_sides:    data.sides,
-      payment_method: data.payment,
-      amount_paid:    data.amount,
       file_name:      data.fileName,
       collect_by:     data.collectBy,
       status:         'pending',
@@ -471,29 +404,31 @@ function genJob() {
   return j;
 }
 
-/* ── CHECKOUT ── */
+/* ── CHECKOUT (called from step 2 — no payment step in Path B) ── */
 async function checkout() {
-  if (!payment || !document.getElementById('tc-check').checked) { showErr('err3', true); return; }
-  showErr('err3', false);
+  const sid = document.getElementById('student-id').value.trim();
+  const em  = document.getElementById('email').value;
+  const ph  = document.getElementById('phone').value;
+  const tc  = document.getElementById('tc-check').checked;
+  if (!sid || !em.includes('@') || ph.length < 9 || !tc) { showErr('err2', true); return; }
+  showErr('err2', false);
+
   const btn = document.getElementById('checkout-btn');
   btn.disabled = true;
-  btn.innerHTML = '<span>Processing...</span><span style="display:inline-block;animation:spin 1s linear infinite">⟳</span>';
+  btn.innerHTML = '<span>Submitting...</span><span style="display:inline-block;animation:spin 1s linear infinite">⟳</span>';
 
   try {
     const now     = new Date();
-    const dateStr = now.toLocaleDateString('en-ZW', { day: 'numeric', month: 'short', year: 'numeric' });
-    const timeStr = now.toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = now.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
     const fullDT  = dateStr + ' at ' + timeStr;
-    const collect = new Date(now.getTime() + 7200000).toLocaleTimeString('en-ZW', { hour: '2-digit', minute: '2-digit' });
+    const collect = new Date(now.getTime() + 7200000).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
     const jobNum  = genJob();
-    const amount  = fmt(calcCost());
 
     const data = {
       jobNum, location: document.getElementById('location').value,
-      studentId: document.getElementById('student-id').value.trim(),
-      email: document.getElementById('email').value,
-      phone: document.getElementById('phone').value,
-      copies, paper: paperName, sides, payment, amount,
+      studentId: sid, email: em, phone: ph,
+      copies, paper: paperName, sides,
       fileName: uploadedFile ? uploadedFile.name : '—',
       dateTime: fullDT, collectBy: collect
     };
@@ -501,7 +436,7 @@ async function checkout() {
     const saved = await saveJob(data);
     if (!saved) throw new Error('Failed to record your print job. Please try again.');
 
-    // Send notifications via Resend
+    // Notify operator + student via Resend (best-effort)
     fetch('/api/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -512,7 +447,7 @@ async function checkout() {
           studentId: data.studentId,
           email: data.email, phone: data.phone,
           copies, paper: paperName, sides,
-          payment, amount, fileName: data.fileName,
+          fileName: data.fileName,
           collectBy: collect
         }
       })
@@ -528,54 +463,52 @@ async function checkout() {
     document.getElementById('r-sides').textContent       = sides;
     document.getElementById('r-email').textContent       = data.email;
     document.getElementById('r-phone').textContent       = data.phone;
-    document.getElementById('r-payment').textContent     = payment + ' · PAID';
-    document.getElementById('r-amount').textContent      = amount;
     document.getElementById('r-printtime').textContent   = fullDT + ' · Collect by ' + collect;
 
-    document.getElementById('pd4').classList.remove('active');
-    document.getElementById('pd4').classList.add('done');
-    document.getElementById('pl3').classList.add('done');
-    ['step1','step2','step3'].forEach(id => document.getElementById(id).classList.remove('visible'));
+    // mark "Done" dot complete
+    document.getElementById('pd3').classList.remove('active');
+    document.getElementById('pd3').classList.add('done');
+    document.getElementById('pl2').classList.add('done');
+    ['step1','step2'].forEach(id => document.getElementById(id).classList.remove('visible'));
     document.getElementById('receipt-screen').classList.add('visible');
     document.getElementById('progress-wrap').style.display = 'none';
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
   } catch(e) {
     console.error('Checkout error:', e);
-    alert('Something went wrong. Please try again.');
+    alert(e.message || 'Something went wrong. Please try again.');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<span>Checkout & Confirm Print</span><span>→</span>';
+    btn.innerHTML = '<span>Submit print request</span><span>→</span>';
   }
 }
 
 /* ── RESET ── */
 function resetApp() {
-  copies = 2; paperRate = 1.00; paperName = 'A4 Standard';
-  sides = 'Single sided'; payment = ''; uploadedFile = null;
+  copies = 2; paperName = 'A4 Standard';
+  sides = 'Single sided'; uploadedFile = null;
   ['location','student-id','email','phone'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('copies-input').value = '2';
   document.getElementById('tc-check').checked = false;
-  document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('selected'));
   document.querySelectorAll('.toggle-group').forEach(g =>
     g.querySelectorAll('.toggle-btn').forEach((b, i) => b.classList.toggle('selected', i === 0))
   );
-  removeFile(); updateCost();
+  removeFile(); updateSummary();
   document.getElementById('receipt-screen').classList.remove('visible');
   document.getElementById('progress-wrap').style.display = 'block';
-  for (let i = 1; i <= 4; i++) {
+  for (let i = 1; i <= 3; i++) {
     document.getElementById('pd' + i).classList.remove('active', 'done');
     if (i === 1) document.getElementById('pd1').classList.add('active');
   }
-  for (let i = 1; i <= 3; i++) document.getElementById('pl' + i).classList.remove('done');
-  ['step1','step2','step3'].forEach((id, i) => document.getElementById(id).classList.toggle('visible', i === 0));
+  for (let i = 1; i <= 2; i++) document.getElementById('pl' + i).classList.remove('done');
+  ['step1','step2'].forEach((id, i) => document.getElementById(id).classList.toggle('visible', i === 0));
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /* ── EXPOSE TO HTML ── */
-Object.assign(window, { setCopies, onCopiesInput, onCopiesBlur, startHold, stopHold, selectPaper, selectSide, selectPay, handleFile, removeFile, goStep, checkout, resetApp });
+Object.assign(window, { setCopies, onCopiesInput, onCopiesBlur, startHold, stopHold, selectPaper, selectSide, handleFile, removeFile, goStep, checkout, resetApp });
 
-updateCost();
+updateSummary();
 </script>
 </body>
 </html>
