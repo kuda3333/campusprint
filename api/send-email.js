@@ -1,20 +1,18 @@
 // Vercel Serverless Function — /api/send-email.js
-// CommonJS format for Vercel compatibility (Node 24 runtime).
+// CommonJS · Node 24 runtime · Fluid Compute compatible
 //
-// 2026-05-16 hardening pass (IMMEDIATE STOP fixes from Council of 5 — Seat 3 Security):
-//   - Removed legacy `salon_booking` handler (one endpoint must serve one product; CWE-732).
-//   - HTML-escape every user-controlled field before interpolation into email body (CWE-79).
-//   - Lock CORS to ALLOWED_ORIGIN(S) env var; fail closed (no `*` echo). (CWE-942)
-//   - Strict request-body schema validation with length caps. (CWE-20)
-//   - Reject `from: onboarding@resend.dev`; require a verified sender via env. (CWE-441)
-//   - Generic error responses to client; full error in server logs only. (CWE-209)
+// Accepts three message types from the static front-end:
+//   - print_job       : student submits a print
+//   - topup_request   : student requests a print-credit top-up
+//   - bulk_request    : lecturer requests a bulk handout job
 //
-// Outstanding (tracked in SECURITY.md): Firebase ID-token verification, per-IP rate limit
-// (Upstash), payment-webhook verification before any "PAID" claim, virus scan on file upload
-// once Blob is wired.
+// All types share the same hardening pass (HTML-escape every interpolated
+// field; lock CORS to ALLOWED_ORIGINS; strict schema validation per type;
+// generic error responses; refuse Resend's onboarding@resend.dev sender).
 
-const MAX_FIELD_LEN = 200;
+const MAX_FIELD_LEN = 400;
 
+/* ─── helpers ───────────────────────────────────────────────────── */
 function escapeHtml(value) {
   if (value == null) return '';
   return String(value)
@@ -31,32 +29,130 @@ function isAllowedOrigin(origin, allowList) {
 }
 
 function looksLikeEmail(v) {
-  return typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) && v.length <= MAX_FIELD_LEN;
+  return typeof v === 'string' &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) &&
+    v.length <= MAX_FIELD_LEN;
 }
 
 function clean(v) {
-  if (typeof v !== 'string') return '';
-  return v.slice(0, MAX_FIELD_LEN);
+  if (typeof v !== 'string' && typeof v !== 'number') return '';
+  return String(v).slice(0, MAX_FIELD_LEN);
 }
 
+function escapeAll(data, keys) {
+  return Object.fromEntries(keys.map(k => [k, escapeHtml(clean(data[k]))]));
+}
+
+/* ─── validators (one per type) ─────────────────────────────────── */
 function validatePrintJob(data) {
   if (!data || typeof data !== 'object') return 'data must be an object';
-  // Path B: payment + amount removed — institutional billing happens out-of-band.
   const required = ['jobNum', 'location', 'studentId', 'email', 'phone',
                     'copies', 'paper', 'sides', 'fileName', 'collectBy'];
   for (const k of required) {
     if (!(k in data)) return `missing field: ${k}`;
-    if (typeof data[k] !== 'string' && typeof data[k] !== 'number') {
-      return `invalid type for: ${k}`;
-    }
+    if (typeof data[k] !== 'string' && typeof data[k] !== 'number') return `invalid type for: ${k}`;
     if (String(data[k]).length > MAX_FIELD_LEN) return `field too long: ${k}`;
   }
   if (data.email && !looksLikeEmail(data.email)) return 'invalid email';
   return null;
 }
 
+function validateTopUp(data) {
+  if (!data || typeof data !== 'object') return 'data must be an object';
+  const required = ['amount', 'studentId', 'email'];
+  for (const k of required) {
+    if (!data[k]) return `missing field: ${k}`;
+    if (String(data[k]).length > MAX_FIELD_LEN) return `field too long: ${k}`;
+  }
+  if (!looksLikeEmail(data.email)) return 'invalid email';
+  if (data.reason && String(data.reason).length > MAX_FIELD_LEN) return 'reason too long';
+  return null;
+}
+
+function validateBulk(data) {
+  if (!data || typeof data !== 'object') return 'data must be an object';
+  const required = ['lecturerId', 'courseCode', 'copies', 'finishing', 'deliver', 'email'];
+  for (const k of required) {
+    if (!data[k]) return `missing field: ${k}`;
+    if (String(data[k]).length > MAX_FIELD_LEN) return `field too long: ${k}`;
+  }
+  if (!looksLikeEmail(data.email)) return 'invalid email';
+  const copies = Number(data.copies);
+  if (!Number.isFinite(copies) || copies < 1 || copies > 10000) return 'invalid copies count';
+  return null;
+}
+
+/* ─── email body templates ──────────────────────────────────────── */
+const SHELL_OPEN = `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:20px;background:#faf9f4">
+  <div style="background:#0e120d;border-radius:12px;padding:20px;margin-bottom:16px">
+    <h2 style="color:#2d9e5f;margin:0 0 4px;font-size:20px;font-family:sans-serif">Campus<span style="color:#fff">Print</span></h2>`;
+const SHELL_CLOSE = `</div><p style="margin-top:16px;font-size:11px;color:#aaa;font-family:monospace">CampusPrint · Pre-alpha</p></div>`;
+const ROW = (label, value) =>
+  `<tr><td style="padding:9px 12px;color:#6b6b6b;border-bottom:1px solid #e6e5dc;font-family:monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.06em">${label}</td><td style="padding:9px 12px;font-weight:600;text-align:right;border-bottom:1px solid #e6e5dc">${value}</td></tr>`;
+
+function bodyPrintJob(e) {
+  return SHELL_OPEN +
+    `<p style="color:#999;font-size:11px;margin:0;font-family:monospace">New print job received</p></div>
+    <div style="background:#e9f3ec;border:1px dashed #1a6b3c;border-radius:8px;padding:16px;text-align:center;margin-bottom:16px">
+      <p style="font-size:11px;color:#0e4a26;margin:0;text-transform:uppercase;letter-spacing:0.1em;font-family:monospace">Job Number</p>
+      <p style="font-size:28px;font-weight:800;color:#0e4a26;margin:4px 0;letter-spacing:2px;font-family:monospace">${e.jobNum}</p>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:8px;overflow:hidden">
+      ${ROW('Location', e.location)}
+      ${ROW('Student ID', e.studentId)}
+      ${ROW('File', e.fileName)}
+      ${ROW('Copies', `${e.copies} · ${e.paper} · ${e.sides}`)}
+      ${ROW('Collect by', e.collectBy)}
+      ${ROW('Contact', `${e.email} · ${e.phone}`)}
+    </table>` + SHELL_CLOSE;
+}
+
+function bodyPrintJobCustomer(e) {
+  return SHELL_OPEN +
+    `<p style="color:#999;font-size:11px;margin:0;font-family:monospace">Your print job is confirmed</p></div>
+    <div style="background:#e9f3ec;border:1px dashed #1a6b3c;border-radius:8px;padding:16px;text-align:center;margin-bottom:16px">
+      <p style="font-size:11px;color:#0e4a26;margin:0;text-transform:uppercase;letter-spacing:0.1em;font-family:monospace">Job Number</p>
+      <p style="font-size:28px;font-weight:800;color:#0e4a26;margin:4px 0;letter-spacing:2px;font-family:monospace">${e.jobNum}</p>
+      <p style="font-size:12px;color:#6b6b6b;margin:0">Show this at the kiosk to collect your prints</p>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:8px;overflow:hidden">
+      ${ROW('Kiosk', e.location)}
+      ${ROW('File', e.fileName)}
+      ${ROW('Copies', `${e.copies} × ${e.paper} · ${e.sides}`)}
+      ${ROW('Collect by', e.collectBy)}
+    </table>
+    <p style="margin-top:16px;font-size:13px;color:#6b6b6b">Collect your prints within <strong>2 hours</strong>. If you have any issues contact us immediately.</p>` + SHELL_CLOSE;
+}
+
+function bodyTopUp(e) {
+  return SHELL_OPEN +
+    `<p style="color:#999;font-size:11px;margin:0;font-family:monospace">Print-credit top-up requested</p></div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:8px;overflow:hidden">
+      ${ROW('Amount', `${e.amount} pages`)}
+      ${ROW('Student ID', e.studentId)}
+      ${ROW('Email', e.email)}
+      ${e.reason ? ROW('Reason', e.reason) : ''}
+    </table>
+    <p style="margin-top:16px;font-size:13px;color:#6b6b6b">Forward to the bursary office for approval. Confirm by replying to the student within 24 hours.</p>` + SHELL_CLOSE;
+}
+
+function bodyBulk(e) {
+  return SHELL_OPEN +
+    `<p style="color:#999;font-size:11px;margin:0;font-family:monospace">Bulk handout request (lecturer)</p></div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:8px;overflow:hidden">
+      ${ROW('Lecturer ID', e.lecturerId)}
+      ${ROW('Course', e.courseCode)}
+      ${ROW('Copies', e.copies)}
+      ${ROW('Finishing', e.finishing)}
+      ${ROW('Deliver to', e.deliver)}
+      ${ROW('Email', e.email)}
+    </table>
+    <p style="margin-top:16px;font-size:13px;color:#6b6b6b">Confirm capacity + deadline with the lecturer at least 24 hours before delivery.</p>` + SHELL_CLOSE;
+}
+
+/* ─── handler ───────────────────────────────────────────────────── */
 module.exports = async function handler(req, res) {
-  // ── CORS: env-driven allowlist, fail closed ────────────────────────────
+  // CORS — env allowlist, fail closed
   const rawAllow = process.env.ALLOWED_ORIGINS || '';
   const allowList = rawAllow.split(',').map(s => s.trim()).filter(Boolean);
   const origin = req.headers.origin;
@@ -67,12 +163,8 @@ module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   }
   if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method !== 'POST')    return res.status(405).json({ error: 'method_not_allowed' });
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  // ── Secrets present? ────────────────────────────────────────────────────
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
   const RESEND_FROM    = process.env.RESEND_FROM;
   const OPERATOR_EMAIL = process.env.OPERATOR_EMAIL;
@@ -85,76 +177,50 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'service_misconfigured' });
   }
 
-  // ── Body validation ─────────────────────────────────────────────────────
   const { type, data } = req.body || {};
-  if (type !== 'print_job') {
+
+  /* Per-type validation + email body assembly */
+  let operatorSubject, operatorBody, customerSubject, customerBody, customerEmail;
+
+  if (type === 'print_job') {
+    const err = validatePrintJob(data);
+    if (err) { console.warn('print_job validation:', err); return res.status(400).json({ error: 'invalid_payload' }); }
+    const e = escapeAll(data, ['jobNum','location','studentId','fileName','copies','paper','sides','email','phone','collectBy']);
+    operatorSubject = `New Print Job ${e.jobNum} — ${e.location}`;
+    operatorBody    = bodyPrintJob(e);
+    customerSubject = `Your CampusPrint Job is Confirmed — ${e.jobNum}`;
+    customerBody    = bodyPrintJobCustomer(e);
+    customerEmail   = looksLikeEmail(data.email) ? data.email : null;
+
+  } else if (type === 'topup_request') {
+    const err = validateTopUp(data);
+    if (err) { console.warn('topup_request validation:', err); return res.status(400).json({ error: 'invalid_payload' }); }
+    const e = escapeAll(data, ['amount','studentId','email','reason']);
+    operatorSubject = `Top-up Request — ${e.amount} pages — ${e.studentId}`;
+    operatorBody    = bodyTopUp(e);
+    customerSubject = `CampusPrint: Top-up request received`;
+    customerBody    = SHELL_OPEN +
+      `<p style="color:#999;font-size:11px;margin:0;font-family:monospace">We've received your top-up request</p></div>
+      <p style="font-size:14px;color:#1d211b;line-height:1.55">Hi there — your request for <strong>${e.amount} additional pages</strong> has been sent to your institution's bursary office. You'll receive a confirmation within 24 hours.</p>` + SHELL_CLOSE;
+    customerEmail   = data.email;
+
+  } else if (type === 'bulk_request') {
+    const err = validateBulk(data);
+    if (err) { console.warn('bulk_request validation:', err); return res.status(400).json({ error: 'invalid_payload' }); }
+    const e = escapeAll(data, ['lecturerId','courseCode','copies','finishing','deliver','email']);
+    operatorSubject = `Bulk Handout — ${e.courseCode} — ${e.copies} copies`;
+    operatorBody    = bodyBulk(e);
+    customerSubject = `CampusPrint: Bulk handout request received`;
+    customerBody    = SHELL_OPEN +
+      `<p style="color:#999;font-size:11px;margin:0;font-family:monospace">We've received your bulk handout request</p></div>
+      <p style="font-size:14px;color:#1d211b;line-height:1.55">Thanks — your request for <strong>${e.copies} copies</strong> of <strong>${e.courseCode}</strong> with <strong>${e.finishing}</strong>, delivered to <strong>${e.deliver}</strong>, is queued. Operations will confirm by email before the deadline.</p>` + SHELL_CLOSE;
+    customerEmail   = data.email;
+
+  } else {
     return res.status(400).json({ error: 'unsupported_type' });
   }
-  const validationError = validatePrintJob(data);
-  if (validationError) {
-    console.warn('validation rejected:', validationError);
-    return res.status(400).json({ error: 'invalid_payload' });
-  }
 
-  // ── Build escaped view of the data for HTML interpolation ───────────────
-  const e = {
-    jobNum:    escapeHtml(clean(data.jobNum)),
-    location:  escapeHtml(clean(data.location)),
-    studentId: escapeHtml(clean(data.studentId)),
-    fileName:  escapeHtml(clean(data.fileName)),
-    copies:    escapeHtml(clean(data.copies)),
-    paper:     escapeHtml(clean(data.paper)),
-    sides:     escapeHtml(clean(data.sides)),
-    email:     escapeHtml(clean(data.email)),
-    phone:     escapeHtml(clean(data.phone)),
-    collectBy: escapeHtml(clean(data.collectBy)),
-  };
-
-  const operatorSubject = `New Print Job ${e.jobNum} — ${e.location}`;
-  const customerSubject = `Your CampusPrint Job is Confirmed — ${e.jobNum}`;
-
-  const operatorBody = `
-    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:20px;background:#f5f2eb">
-      <div style="background:#0e0e0e;border-radius:12px;padding:20px;margin-bottom:16px">
-        <h2 style="color:#2d9e5f;margin:0 0 4px;font-size:20px">Campus<span style="color:#fff">Print</span></h2>
-        <p style="color:#999;font-size:11px;margin:0;font-family:monospace">New print job received</p>
-      </div>
-      <div style="background:#e8f5ee;border:1px dashed #1a6b3c;border-radius:8px;padding:16px;text-align:center;margin-bottom:16px">
-        <p style="font-size:11px;color:#1a6b3c;margin:0;text-transform:uppercase;letter-spacing:0.1em">Job Number</p>
-        <p style="font-size:28px;font-weight:800;color:#1a6b3c;margin:4px 0;letter-spacing:2px;font-family:monospace">${e.jobNum}</p>
-      </div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:8px;overflow:hidden">
-        <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-family:monospace;font-size:11px">KIOSK</td><td style="padding:8px 12px;font-weight:600;text-align:right;border-bottom:1px solid #ddd9cf">${e.location}</td></tr>
-        <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-family:monospace;font-size:11px">STUDENT ID</td><td style="padding:8px 12px;font-weight:600;text-align:right;border-bottom:1px solid #ddd9cf">${e.studentId}</td></tr>
-        <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-family:monospace;font-size:11px">FILE</td><td style="padding:8px 12px;font-weight:600;text-align:right;border-bottom:1px solid #ddd9cf">${e.fileName}</td></tr>
-        <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-family:monospace;font-size:11px">COPIES</td><td style="padding:8px 12px;font-weight:600;text-align:right;border-bottom:1px solid #ddd9cf">${e.copies} copies · ${e.paper} · ${e.sides}</td></tr>
-        <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-family:monospace;font-size:11px">COLLECT BY</td><td style="padding:8px 12px;font-weight:600;text-align:right;border-bottom:1px solid #ddd9cf">${e.collectBy}</td></tr>
-        <tr><td style="padding:8px 12px;color:#6b6b6b;font-family:monospace;font-size:11px">CONTACT</td><td style="padding:8px 12px;font-weight:600;text-align:right">${e.email} · ${e.phone}</td></tr>
-      </table>
-      <p style="margin-top:16px;font-size:11px;color:#aaa;font-family:monospace">CampusPrint · Campus kiosk printing</p>
-    </div>`;
-
-  const customerBody = `
-    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:20px">
-      <div style="background:#0e0e0e;border-radius:12px;padding:20px;margin-bottom:16px">
-        <h2 style="color:#2d9e5f;margin:0 0 4px;font-size:20px">Campus<span style="color:#fff">Print</span></h2>
-        <p style="color:#999;font-size:11px;margin:0;font-family:monospace">Your print job is confirmed</p>
-      </div>
-      <div style="background:#e8f5ee;border:1px dashed #1a6b3c;border-radius:8px;padding:16px;text-align:center;margin-bottom:16px">
-        <p style="font-size:11px;color:#1a6b3c;margin:0;text-transform:uppercase;letter-spacing:0.1em">Job Number</p>
-        <p style="font-size:28px;font-weight:800;color:#1a6b3c;margin:4px 0;letter-spacing:2px;font-family:monospace">${e.jobNum}</p>
-        <p style="font-size:12px;color:#6b6b6b;margin:0">Show this at the kiosk to collect your prints</p>
-      </div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:8px;overflow:hidden">
-        <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-size:11px">Kiosk</td><td style="padding:8px 12px;font-weight:600;text-align:right;border-bottom:1px solid #ddd9cf">${e.location}</td></tr>
-        <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-size:11px">File</td><td style="padding:8px 12px;font-weight:600;text-align:right;border-bottom:1px solid #ddd9cf">${e.fileName}</td></tr>
-        <tr><td style="padding:8px 12px;color:#6b6b6b;border-bottom:1px solid #ddd9cf;font-size:11px">Copies</td><td style="padding:8px 12px;font-weight:600;text-align:right;border-bottom:1px solid #ddd9cf">${e.copies} × ${e.paper} · ${e.sides}</td></tr>
-        <tr><td style="padding:8px 12px;color:#6b6b6b;font-size:11px">Collect By</td><td style="padding:8px 12px;font-weight:600;text-align:right">${e.collectBy}</td></tr>
-      </table>
-      <p style="margin-top:16px;font-size:13px;color:#6b6b6b">Collect your prints within <strong>2 hours</strong>. If you have any issues contact us immediately.</p>
-      <p style="margin-top:16px;font-size:11px;color:#aaa;font-family:monospace">CampusPrint · Campus kiosk printing</p>
-    </div>`;
-
+  /* Send */
   try {
     const sendOne = (to, subject, html) => fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -171,8 +237,8 @@ module.exports = async function handler(req, res) {
       return res.status(502).json({ error: 'email_send_failed' });
     }
 
-    if (data.email && looksLikeEmail(data.email)) {
-      const customerRes = await sendOne(data.email, customerSubject, customerBody);
+    if (customerEmail && customerEmail !== OPERATOR_EMAIL) {
+      const customerRes = await sendOne(customerEmail, customerSubject, customerBody);
       if (!customerRes.ok) {
         console.warn('resend customer send failed (non-fatal):',
                      customerRes.status, await customerRes.text());
