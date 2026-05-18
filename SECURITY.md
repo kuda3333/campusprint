@@ -49,35 +49,38 @@ existing `print_job` type.
 
 ## Supabase migration (2026-05-17)
 
-Firebase Firestore replaced with Supabase Postgres. Key files changed:
+Firebase Firestore was replaced with Supabase Postgres. The Supabase JS client is
+loaded from a pinned esm.sh URL; `print_jobs` writes go through RLS-protected
+INSERT policies. See `README.md` for setup steps.
 
-| File | Change |
-|---|---|
-| `index.html` | Firebase SDK + init removed; Supabase JS client wired via CDN (`esm.sh`). `saveJob` now calls `db.from('print_jobs').insert(...)`. Dead EmailJS stub + `sendEmail` function removed. |
-| `supabase/migrations/001_print_jobs.sql` | Schema for `print_jobs` table with status-machine check constraint, indexes, RLS policies (anon INSERT allowed; anon SELECT denied; service_role full access). |
+## Firebase decommissioning (2026-05-18)
 
-**Manual steps required to activate:**
-1. Create a free project at supabase.com.
-2. In the project's **SQL Editor**, run the contents of `supabase/migrations/001_print_jobs.sql`.
-3. Copy **Project URL** and **anon public key** from Settings → API.
-4. Replace the two placeholder values in `index.html` (marked with `// ← replace`):
-   - `SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co'`
-   - `SUPABASE_ANON = 'YOUR_ANON_KEY_HERE'`
-5. Deploy (the static `index.html` change is enough — no build step yet).
+The legacy Firebase project (`saloon-booking-ce824`) is no longer used by this
+codebase. The `firestore.rules` file has been deleted because Supabase is now the
+sole backend (migrations 001–003). **Action required outside this repo:** delete
+the legacy Firebase project, or rotate its API key and lock all rules to
+`allow read, write: if false;`, then deauthorise its OAuth clients.
 
-## IMMEDIATE STOP — fixes landed in this commit
+## IMMEDIATE STOP — fixes landed across commits
 
 | # | Item | File | Status |
 |---|------|------|--------|
-| 1 | Deny-all Firestore safety lock until proper rules ship | `firestore.rules` | ✅ written; **needs `firebase deploy --only firestore:rules` against a `campusprint-prod` project** (do NOT deploy against the shared salon project) |
+| 1 | Legacy Firebase rules file removed; Supabase is sole backend | `firestore.rules` (deleted) | ✅ |
 | 2 | Remove legacy `salon_booking` handler from email endpoint (CWE-732) | `api/send-email.js` | ✅ |
 | 3 | HTML-escape every user-controlled field before email interpolation (CWE-79) | `api/send-email.js` | ✅ |
 | 4 | Lock CORS to `ALLOWED_ORIGINS` env allowlist; fail closed (CWE-942) | `api/send-email.js` | ✅ |
-| 5 | Strict request-body schema validation + 200-char field caps (CWE-20) | `api/send-email.js` | ✅ |
+| 5 | Strict request-body schema validation + 400-char field caps (CWE-20) | `api/send-email.js` | ✅ |
 | 6 | Refuse to send when `RESEND_FROM` is `onboarding@resend.dev` (CWE-441) | `api/send-email.js` | ✅ |
 | 7 | Generic error responses; full errors only in server logs (CWE-209) | `api/send-email.js` | ✅ |
-| 8 | `package.json` with engine pin and deploy scripts | `package.json` | ✅ |
-| 9 | This document — security posture + remediation tracker | `SECURITY.md` | ✅ |
+| 8 | Verify Supabase JWT on send-email; suppress customer mail when unauthenticated (CWE-290 / spoof) | `api/send-email.js` | ✅ |
+| 9 | Per-identity rate limit (10/min) on send-email; replay-safe via idempotency key (CWE-770) | `api/send-email.js` | ✅ |
+| 10 | 8s `AbortSignal.timeout` on Resend fetch (CWE-400) | `api/send-email.js` | ✅ |
+| 11 | Canonical-origin emailRedirectTo + email-domain allowlist on magic link (CWE-601) | `index.html` | ✅ |
+| 12 | Security headers + CSP via `vercel.json` (HSTS, X-Frame-Options, Referrer-Policy, Permissions-Policy) | `vercel.json` | ✅ |
+| 13 | Pin `@supabase/supabase-js` to exact version (supply-chain hardening) | `index.html` | ✅ |
+| 14 | `.env.example` documenting required env vars | `.env.example` | ✅ |
+| 15 | `package.json` with engine pin and deploy scripts | `package.json` | ✅ |
+| 16 | This document — security posture + remediation tracker | `SECURITY.md` | ✅ |
 
 ### Environment variables required AFTER this commit
 
@@ -91,17 +94,16 @@ The function will return `500 service_unavailable` until these are set in Vercel
 | `OPERATOR_EMAIL` | `print-ops@example.edu` | Where operator notifications go |
 | `ALLOWED_ORIGINS` | `https://campusprint.example.edu,https://campusprint-staging.example.edu` | Comma-separated CORS allowlist |
 
-## Still outstanding — P0 (next session)
-
-These were flagged CRITICAL or HIGH by Seat 3 and are **not yet fixed**:
+## Still outstanding — P1 (next sprint)
 
 | ID | Severity | Issue | Fix |
 |---|---|---|---|
-| V4 | CRITICAL | Firestore default-open posture in the shared salon project (`saloon-booking-ce824`) | Rotate API key in Firebase Console, create `campusprint-prod` project, deploy `firestore.rules` |
-| ~~V5~~ | ~~CRITICAL~~ | ✅ **FIXED 2026-05-17 by deletion.** Path B removed the payment step from the student flow entirely. The "PAID" claim, the payment-platform selector, the cost banner, and the `payment_method`/`amount_paid` DB columns are all gone. Institutional billing happens out-of-band at the contract level. (Migration `supabase/migrations/002_path_b_drop_payment.sql`.) | — |
-| V6 | HIGH | Student ID is a free-text field — impersonation by design | Auth.js + Entra ID / Google / SAML (Path B requires this) |
-| V9 | HIGH | Firebase web config + project name `saloon-booking-ce824` is shipped to the browser, leaking that student PII and salon-customer PII are co-mingled | New dedicated Firebase project; rotate the leaked key |
-| V11–V17 | MED/LOW | PII leak in logs (`console.error` in send-email.js, `alert(e.code)` in index.html); missing security headers; predictable job-number RNG; silent email-fail | All tracked for next P0 sweep |
+| V6 | HIGH | Student ID is a free-text field — impersonation by design | Federated SSO (Entra ID / Google / SAML); magic-link is the interim path with domain allowlist |
+| V18 | MED | In-memory rate limit is per warm instance only — can be evaded across cold starts | Move to Upstash Redis / Vercel KV with `@upstash/ratelimit` |
+| V19 | MED | Server-side email-domain allowlist not yet enforced (client-side check only) | Add Supabase Auth Hook (`before_user_created`) that rejects non-allowlisted domains |
+| V20 | MED | No observability — `console.error` only, 7-day retention on Vercel Hobby | Sentry + Axiom; structured JSON logs with request IDs |
+| V21 | MED | No SPF/DKIM/DMARC verification in repo for `RESEND_FROM` domain | Document required DNS records; add a Resend bounce webhook |
+| V22 | LOW | CSP still allows `'unsafe-inline'` for scripts (inline `onclick` handlers + module script) | Extract inline handlers, switch to nonce-based CSP |
 
 ## P1 + P2
 
