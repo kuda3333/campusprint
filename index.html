@@ -102,6 +102,7 @@ svg { display: block; }
 .brand__name { font-family: var(--font-display); font-weight: 800; font-size: 19px; letter-spacing: -0.025em; }
 .brand__mark { color: var(--accent); }
 .brand__tag { font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.14em; color: var(--ink-4); text-transform: uppercase; }
+.app-header__right { display: flex; align-items: center; gap: 8px; }
 .header-link {
   display: none;
   align-items: center;
@@ -119,6 +120,40 @@ svg { display: block; }
 }
 .header-link:hover { background: var(--ink-1); border-color: var(--ink-1); color: var(--paper); }
 @media (min-width: 640px) { .header-link { display: inline-flex; } }
+
+/* Auth pill — sign-in button when out, email + sign-out chip when in */
+.auth-pill { display: inline-flex; align-items: center; }
+.auth-pill.is-in {
+  display: none;
+  background: var(--accent-tint);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: var(--r-pill);
+  padding: 3px 3px 3px 12px;
+  height: 32px;
+  gap: 8px;
+}
+@media (min-width: 640px) { .auth-pill.is-in { display: inline-flex; } }
+.auth-pill__email {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--accent-deep);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.auth-pill__signout {
+  width: 24px; height: 24px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: var(--paper);
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.auth-pill__signout:hover { background: var(--accent-deep); }
+.auth-pill__signout:active { transform: scale(0.94); }
 
 /* ─── PROGRESS ──────────────────────────────────────────────────── */
 .progress { background: var(--card); border-bottom: 1px solid var(--line); }
@@ -549,7 +584,12 @@ dialog.modal::backdrop {
       <span class="brand__name">Campus<span class="brand__mark">Print</span></span>
       <span class="brand__tag">Print release · v0.1</span>
     </a>
-    <a href="#services" class="header-link">More services <svg class="icon-sm"><use href="#i-arrow-right"/></svg></a>
+    <div class="app-header__right">
+      <div class="auth-pill is-out" id="auth-pill">
+        <button class="header-link" type="button" data-action="sign-in">Sign in</button>
+      </div>
+      <a href="#services" class="header-link">More services <svg class="icon-sm"><use href="#i-arrow-right"/></svg></a>
+    </div>
   </div>
 </header>
 
@@ -942,6 +982,62 @@ const Storage = {
   clearJobs() { Storage.write(STORAGE_KEYS.jobs, []); UI.refreshHistoryBadge(); }
 };
 
+/* ─── AUTH (Supabase magic-link) ─────────────────────────────── */
+const Auth = {
+  user: null,
+
+  async init() {
+    // On magic-link return, Supabase JS auto-detects the URL hash and
+    // creates a session. getSession() reads it.
+    const { data: { session } } = await db.auth.getSession();
+    Auth._setUser(session?.user || null);
+
+    // Live updates when sign-in / sign-out / token-refresh happens
+    db.auth.onAuthStateChange((event, session) => {
+      Auth._setUser(session?.user || null);
+      if (event === 'SIGNED_IN' && Modal && document.getElementById('modal')?.open) {
+        // If the sign-in modal is still open after magic-link return, close it.
+        Modal.close();
+      }
+    });
+  },
+
+  _setUser(user) {
+    Auth.user = user;
+    Auth._renderHeader();
+  },
+
+  _renderHeader() {
+    const pill = $('auth-pill');
+    if (!pill) return;
+    if (Auth.user) {
+      pill.classList.add('is-in');
+      pill.classList.remove('is-out');
+      pill.innerHTML = `
+        <span class="auth-pill__email">${esc(Auth.user.email || 'Signed in')}</span>
+        <button class="auth-pill__signout" type="button" data-action="sign-out" aria-label="Sign out">
+          <svg class="icon-sm"><use href="#i-x"/></svg>
+        </button>`;
+    } else {
+      pill.classList.add('is-out');
+      pill.classList.remove('is-in');
+      pill.innerHTML = `<button class="header-link" type="button" data-action="sign-in">Sign in</button>`;
+    }
+  },
+
+  async sendMagicLink(email) {
+    return db.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.origin + window.location.pathname },
+    });
+  },
+
+  async signOut() {
+    if (!confirm('Sign out of CampusPrint? Your local history stays on this device.')) return;
+    await db.auth.signOut();
+  },
+};
+
 /* ─── STATE ──────────────────────────────────────────────────── */
 const state = {
   copies: 2,
@@ -1273,21 +1369,24 @@ window.App = App;
 
 /* ─── SUPABASE SAVE ──────────────────────────────────────────── */
 async function saveJobRemote(data) {
-  const { error } = await db
-    .from('print_jobs')
-    .insert({
-      job_number:     data.jobNum,
-      kiosk_location: `${data.university} — ${data.kiosk}`,
-      student_id:     data.studentId,
-      student_email:  data.email,
-      student_phone:  data.phone,
-      copies:         Number(data.copies),
-      paper_type:     data.paper,
-      print_sides:    data.sides,
-      file_name:      data.fileName,
-      collect_by:     data.collectBy,
-      status:         'pending',
-    });
+  const row = {
+    job_number:     data.jobNum,
+    kiosk_location: `${data.university} — ${data.kiosk}`,
+    student_id:     data.studentId,
+    student_email:  data.email,
+    student_phone:  data.phone,
+    copies:         Number(data.copies),
+    paper_type:     data.paper,
+    print_sides:    data.sides,
+    file_name:      data.fileName,
+    collect_by:     data.collectBy,
+    status:         'pending',
+  };
+  // If the user is signed in, link this job to their auth.users row.
+  // RLS policy "insert_own_or_anon" enforces this on the server too.
+  if (Auth.user) row.user_id = Auth.user.id;
+
+  const { error } = await db.from('print_jobs').insert(row);
   if (error) {
     console.error('Supabase insert failed:', error.message, error.code);
     return false;
@@ -1346,40 +1445,98 @@ const Modal = (() => {
  *  SERVICES — five live + one coming-soon
  * ─────────────────────────────────────────────────────────────── */
 const Services = {
-  /* My print history — localStorage */
-  history() {
-    const render = () => {
-      const jobs = Storage.jobs();
-      if (jobs.length === 0) {
-        return `
-          <div class="kit-empty">
-            <div class="kit-empty__icon"><svg class="icon"><use href="#i-history"/></svg></div>
-            <div class="kit-empty__title">No prints yet</div>
-            <p class="kit-empty__body">Submitted print jobs from this browser will appear here. We store them locally on your device so you can re-print or contest a job without logging in.</p>
-          </div>`;
+  /* Sign in — magic link */
+  signin() {
+    const html = `
+      <form class="modal-form" data-modal-form="signin">
+        <p style="font-size:13px;color:var(--ink-3);line-height:1.55;margin-bottom:18px">
+          Enter your email and we'll send you a magic link. Click it to sign in — no password needed.
+          Your history will then sync across every device you use.
+        </p>
+        <div class="field">
+          <label class="field__label" for="signin-email">Email address</label>
+          <input id="signin-email" class="input" type="email" placeholder="you@university.edu" required autofocus>
+        </div>
+        <button class="btn btn--primary" type="submit">
+          <span>Send magic link</span>
+          <svg class="icon"><use href="#i-arrow-right"/></svg>
+        </button>
+      </form>`;
+    Modal.open('Sign in to CampusPrint', html);
+  },
+
+  /* My print history — Supabase if signed in, localStorage otherwise */
+  async history() {
+    Modal.open('My print history', `
+      <div class="kit-empty">
+        <div class="kit-empty__icon"><svg class="icon"><use href="#i-loader"/></svg></div>
+        <div class="kit-empty__title">Loading…</div>
+      </div>`);
+
+    let jobs = [];
+    let sourceNote;
+
+    if (Auth.user) {
+      const { data, error } = await db.from('print_jobs')
+        .select('job_number, kiosk_location, copies, paper_type, print_sides, file_name, collect_by, status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(CONFIG.HISTORY_LIMIT);
+      if (error) {
+        console.error('history fetch failed:', error);
+        jobs = Storage.jobs();
+        sourceNote = `Couldn't reach the server — showing local history`;
+      } else {
+        jobs = (data || []).map(j => ({
+          jobNumber: j.job_number,
+          kiosk:     j.kiosk_location,
+          copies:    j.copies + ' copies',
+          paper:     j.paper_type,
+          sides:     j.print_sides,
+          fileName:  j.file_name,
+          collectBy: j.collect_by,
+          savedAt:   new Date(j.created_at).getTime(),
+        }));
+        sourceNote = `${jobs.length} job${jobs.length === 1 ? '' : 's'} synced from ${esc(Auth.user.email || 'your account')}`;
       }
-      const items = jobs.map(j => `
-        <article class="history-item">
-          <div class="history-item__code">${esc(j.jobNumber)}</div>
-          <div class="history-item__meta">
-            <strong>${esc(j.university)}</strong> · ${esc(j.kiosk)}<br>
-            ${esc(j.copies)} × ${esc(j.paper)} · ${esc(j.sides)} · Collect by ${esc(j.collectBy)}
-          </div>
-          <time class="history-item__time">${esc(formatTime(j.savedAt))}</time>
-        </article>`).join('');
-      return `
-        <div class="history">${items}</div>
-        <div class="history-foot">
-          <span>${jobs.length} job${jobs.length === 1 ? '' : 's'} stored locally · max ${CONFIG.HISTORY_LIMIT}</span>
-          <button class="history-clear" type="button" data-history-clear>Clear history</button>
-        </div>`;
-    };
-    Modal.open('My print history', render());
+    } else {
+      jobs = Storage.jobs();
+      sourceNote = `${jobs.length} job${jobs.length === 1 ? '' : 's'} stored locally · <a data-action="sign-in" style="color:var(--accent-deep);border-bottom:1px dotted var(--accent);cursor:pointer">sign in</a> to sync across devices`;
+    }
+
+    if (jobs.length === 0) {
+      Modal.setBody(`
+        <div class="kit-empty">
+          <div class="kit-empty__icon"><svg class="icon"><use href="#i-history"/></svg></div>
+          <div class="kit-empty__title">No prints yet</div>
+          <p class="kit-empty__body">${Auth.user
+            ? "You haven't submitted any prints from this account yet. Once you do, they'll sync to every device you sign in on."
+            : "Submitted print jobs will appear here. We store them locally on your device — sign in for cross-device sync."}</p>
+        </div>`);
+      return;
+    }
+
+    const items = jobs.map(j => `
+      <article class="history-item">
+        <div class="history-item__code">${esc(j.jobNumber)}</div>
+        <div class="history-item__meta">
+          <strong>${esc(j.kiosk)}</strong><br>
+          ${esc(j.copies)} · ${esc(j.paper)} · ${esc(j.sides)} · Collect by ${esc(j.collectBy)}
+        </div>
+        <time class="history-item__time">${esc(formatTime(j.savedAt))}</time>
+      </article>`).join('');
+
+    Modal.setBody(`
+      <div class="history">${items}</div>
+      <div class="history-foot">
+        <span>${sourceNote}</span>
+        ${Auth.user ? '' : '<button class="history-clear" type="button" data-history-clear>Clear local history</button>'}
+      </div>`);
+
     $('modal-body').addEventListener('click', e => {
       if (e.target.closest('[data-history-clear]')) {
         if (confirm('Clear all locally-stored print history? This cannot be undone.')) {
           Storage.clearJobs();
-          Modal.setBody(render());
+          Services.history();  // Re-render
         }
       }
     }, { once: true });
@@ -1498,38 +1655,129 @@ const Services = {
   },
 };
 
-/* Modal form submit handler — saves request locally, swaps modal to success */
-document.addEventListener('submit', e => {
+/* ─── FORM SUBMIT — POSTs to /api/send-email, swaps modal on result ── */
+function setSubmittingState(btn, isSubmitting) {
+  if (!btn) return;
+  btn.disabled = isSubmitting;
+  btn.classList.toggle('btn--spinner', isSubmitting);
+  if (isSubmitting) {
+    btn.dataset.origLabel = btn.innerHTML;
+    btn.innerHTML = '<span>Sending…</span><svg class="icon"><use href="#i-loader"/></svg>';
+  } else if (btn.dataset.origLabel) {
+    btn.innerHTML = btn.dataset.origLabel;
+    delete btn.dataset.origLabel;
+  }
+}
+
+document.addEventListener('submit', async e => {
   const form = e.target.closest('[data-modal-form]');
   if (!form) return;
   e.preventDefault();
 
   const kind = form.dataset.modalForm;
-  const data = Object.fromEntries(new FormData(form).entries());
-  const fields = {};
-  form.querySelectorAll('input, select, textarea').forEach(el => { fields[el.id] = el.value; });
-  Storage.addRequest({ kind, fields });
+  const submitBtn = form.querySelector('button[type="submit"]');
+  setSubmittingState(submitBtn, true);
 
-  const messages = {
-    topup: 'Your top-up request has been queued. Your bursary office will email you within 24 hours.',
-    bulk:  "Your bulk handout request is queued. Operations will confirm by email before the deadline.",
-  };
-  Modal.setBody(`
-    <div class="kit-success">
-      <div class="kit-success__icon"><svg class="icon"><use href="#i-check"/></svg></div>
-      <div class="kit-success__title">Request submitted</div>
-      <p class="kit-success__body">${esc(messages[kind] || 'Your request has been queued.')}</p>
-      <button class="btn btn--ghost" data-modal-close type="button" style="max-width:240px;margin:0 auto">Close</button>
-    </div>
-  `);
+  /* ─ sign-in: send magic link, no API roundtrip ─ */
+  if (kind === 'signin') {
+    const email = form.querySelector('#signin-email').value.trim();
+    const { error } = await Auth.sendMagicLink(email);
+    setSubmittingState(submitBtn, false);
+    if (error) {
+      Modal.setBody(`
+        <div class="kit-empty">
+          <div class="kit-empty__icon" style="background:var(--danger-tint);color:var(--danger)"><svg class="icon"><use href="#i-alert"/></svg></div>
+          <div class="kit-empty__title">Couldn't send the link</div>
+          <p class="kit-empty__body">${esc(error.message || 'Try again in a moment.')}</p>
+        </div>`);
+      return;
+    }
+    Modal.setBody(`
+      <div class="kit-success">
+        <div class="kit-success__icon"><svg class="icon"><use href="#i-check"/></svg></div>
+        <div class="kit-success__title">Check your inbox</div>
+        <p class="kit-success__body">We sent a magic link to <strong>${esc(email)}</strong>. Click it to sign in — this tab will pick up the session automatically.</p>
+        <button class="btn btn--ghost" data-modal-close type="button" style="max-width:240px;margin:0 auto">Close</button>
+      </div>`);
+    return;
+  }
+
+  /* ─ topup_request / bulk_request → /api/send-email ─ */
+  let payload;
+  if (kind === 'topup') {
+    payload = { type: 'topup_request', data: {
+      amount:    form.querySelector('#topup-amount').value,
+      studentId: form.querySelector('#topup-sid').value.trim(),
+      email:     form.querySelector('#topup-email').value.trim(),
+      reason:    form.querySelector('#topup-reason').value.trim(),
+    }};
+  } else if (kind === 'bulk') {
+    payload = { type: 'bulk_request', data: {
+      lecturerId: form.querySelector('#bulk-lid').value.trim(),
+      courseCode: form.querySelector('#bulk-course').value.trim(),
+      copies:     form.querySelector('#bulk-copies').value,
+      finishing:  form.querySelector('#bulk-finishing').value,
+      deliver:    form.querySelector('#bulk-deliver').value.trim(),
+      email:      form.querySelector('#bulk-email').value.trim(),
+    }};
+  } else {
+    setSubmittingState(submitBtn, false);
+    return;
+  }
+
+  // Save locally as a fallback record regardless of API outcome
+  Storage.addRequest({ kind, data: payload.data });
+
+  try {
+    const res = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `HTTP ${res.status}`);
+    }
+
+    const successCopy = {
+      topup: 'Your top-up request has been sent. Expect a reply from your bursary office within 24 hours.',
+      bulk:  'Your bulk handout request has been sent. Operations will confirm by email before the deadline.',
+    };
+    Modal.setBody(`
+      <div class="kit-success">
+        <div class="kit-success__icon"><svg class="icon"><use href="#i-check"/></svg></div>
+        <div class="kit-success__title">Request submitted</div>
+        <p class="kit-success__body">${esc(successCopy[kind])}</p>
+        <button class="btn btn--ghost" data-modal-close type="button" style="max-width:240px;margin:0 auto">Close</button>
+      </div>`);
+  } catch (err) {
+    console.warn('form send failed:', err);
+    Modal.setBody(`
+      <div class="kit-empty">
+        <div class="kit-empty__icon" style="background:var(--danger-tint);color:var(--danger)"><svg class="icon"><use href="#i-alert"/></svg></div>
+        <div class="kit-empty__title">We couldn't reach the server</div>
+        <p class="kit-empty__body">Your request was saved on this device. We'll retry sending it next time you open the app, or reload this page now to try again.</p>
+        <button class="btn btn--ghost" data-modal-close type="button" style="max-width:240px;margin:0 auto;margin-top:18px">Close</button>
+      </div>`);
+  }
 });
 
-/* Service card delegated click → route to the right service */
+/* ─── DELEGATED CLICKS — service cards, sign-in/out ─────────── */
 document.addEventListener('click', e => {
   const card = e.target.closest('.service-card[data-service]');
-  if (!card) return;
-  const service = card.dataset.service;
-  if (Services[service]) Services[service]();
+  if (card) {
+    const service = card.dataset.service;
+    if (Services[service]) Services[service]();
+    return;
+  }
+  if (e.target.closest('[data-action="sign-in"]')) {
+    Modal.close();        // close any open modal first (e.g. history "sign in to sync" link)
+    Services.signin();
+    return;
+  }
+  if (e.target.closest('[data-action="sign-out"]')) {
+    Auth.signOut();
+  }
 });
 
 /* ─── ENTRANCE REVEAL (service grid stagger) ───────────────── */
@@ -1556,6 +1804,7 @@ refreshKiosks();
 UI.updateSummary();
 UI.refreshHistoryBadge();
 setupReveal();
+Auth.init();   // detects magic-link return, listens for sign-in/out events
 </script>
 
 </body>

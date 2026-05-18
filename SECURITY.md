@@ -18,6 +18,35 @@ Implications:
 - **SSO is mandatory.** Auth via Microsoft Entra ID, Google Workspace, SAML 2.0
   (Shibboleth / Okta / Ping), or magic-link fallback gated to an email-domain allowlist.
 
+## Auth + multi-device history (2026-05-18 — migration 003)
+
+Adds Supabase Auth (magic-link via email) and per-user Row Level Security so
+"My print history" syncs across every device a student signs in on.
+
+**To activate:**
+1. Run `supabase/migrations/003_auth_history.sql` in the Supabase SQL Editor.
+2. In Supabase dashboard → **Authentication → URL Configuration**, add your
+   production + preview URLs (e.g. `https://campusprint.vercel.app/`,
+   `https://*-kuda3333.vercel.app/`) to the **Redirect URLs** allowlist.
+3. (Optional but recommended) **Authentication → Providers → Email**, customise
+   the magic-link email template with your CampusPrint brand.
+
+**What the migration does:**
+- Adds `user_id uuid references auth.users(id)` column to `print_jobs`.
+- Replaces the old anon-only RLS policies with three auth-aware ones:
+  - `insert_own_or_anon` — anyone can insert; signed-in users MUST link the
+    row to their own `auth.uid()` (no impersonation).
+  - `select_own` — authenticated users can read only their own jobs.
+  - `update_own` — authenticated users can update only their own jobs
+    (foundation for future "cancel pending job" flow).
+
+**Two new request types in `api/send-email.js`:**
+- `topup_request` — student requests print-credit top-up. Routed to
+  `OPERATOR_EMAIL` (bursary office) + customer confirmation.
+- `bulk_request` — lecturer requests bulk handout. Same routing.
+Both share validation, HTML-escaping, and the rate-limit/CORS posture of the
+existing `print_job` type.
+
 ## Supabase migration (2026-05-17)
 
 Firebase Firestore replaced with Supabase Postgres. Key files changed:
