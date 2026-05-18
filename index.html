@@ -6,6 +6,12 @@
 <meta name="theme-color" content="#0e120d">
 <title>CampusPrint — Mobile print release</title>
 <meta name="description" content="Submit any document from your phone. Walk to any campus kiosk. Pick up within 120 minutes.">
+<meta property="og:title" content="CampusPrint — Mobile print release">
+<meta property="og:description" content="Submit from your phone. Collect at any campus kiosk within 2 hours. Free for students.">
+<meta property="og:image" content="assets/img/hero.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="assets/img/hero.png">
 
 <link rel="preconnect" href="https://api.fontshare.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -61,7 +67,8 @@ body {
   font-size: 15px;
   line-height: 1.55;
   color: var(--ink-2);
-  background: var(--paper);
+  background: var(--paper) url(assets/img/texture.png) repeat;
+  background-size: 256px 256px;
   min-height: 100vh;
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
@@ -98,9 +105,19 @@ svg { display: block; }
   justify-content: space-between;
   gap: 16px;
 }
-.brand { display: inline-flex; align-items: baseline; gap: 10px; color: var(--ink-1); }
-.brand__name { font-family: var(--font-display); font-weight: 800; font-size: 19px; letter-spacing: -0.025em; }
-.brand__mark { color: var(--accent); }
+.brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink-1); }
+.brand__logo {
+  display: block;
+  /* The logo PNG is a 2×2 panel sheet. background-size:200% auto scales it so
+     the image is twice the container width, showing only the left half = the
+     horizontal lockup panel. background-position shifts up to centre on the mark. */
+  width: 160px;
+  height: 32px;
+  background-image: url(assets/img/logo.png);
+  background-repeat: no-repeat;
+  background-size: 200% auto;
+  background-position: 0 -22px;
+}
 .brand__tag { font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.14em; color: var(--ink-4); text-transform: uppercase; }
 .app-header__right { display: flex; align-items: center; gap: 8px; }
 .header-link {
@@ -602,7 +619,7 @@ dialog.modal::backdrop {
 <header class="app-header">
   <div class="app-header__inner">
     <a href="#top" class="brand" aria-label="CampusPrint home">
-      <span class="brand__name">Campus<span class="brand__mark">Print</span></span>
+      <span class="brand__logo" role="img" aria-label="CampusPrint"></span>
       <span class="brand__tag">Print release · v0.1</span>
     </a>
     <div class="app-header__right">
@@ -798,6 +815,9 @@ dialog.modal::backdrop {
           <p class="receipt__time" id="receipt-time"></p>
         </div>
         <div class="receipt__body">
+          <div style="text-align:center;margin:-4px 0 20px">
+            <img src="assets/img/success.png" alt="Print job received — kiosk will be notified" style="width:180px;height:auto;border-radius:10px">
+          </div>
           <div class="job-code">
             <div class="job-code__label">Print job number</div>
             <div class="job-code__value" id="job-number"></div>
@@ -901,7 +921,7 @@ dialog.modal::backdrop {
     </button>
 
     <button class="service-card" data-service="papers" data-status="soon" type="button" aria-label="Past papers archive — coming soon">
-      <div class="service-card__icon"><svg class="icon"><use href="#i-book"/></svg></div>
+      <div class="service-card__icon"><img src="assets/img/past-papers.png" alt="" aria-hidden="true" style="width:36px;height:36px;object-fit:contain;mix-blend-mode:multiply"></div>
       <div class="service-card__title">Past papers archive</div>
       <p class="service-card__desc">Browse and print exam papers from previous years for your faculty.</p>
       <div class="service-card__foot">
@@ -1584,7 +1604,7 @@ const Services = {
     if (jobs.length === 0) {
       Modal.setBody(`
         <div class="kit-empty">
-          <div class="kit-empty__icon"><svg class="icon"><use href="#i-history"/></svg></div>
+          <div class="kit-empty__icon"><img src="assets/img/empty-state.png" alt="" aria-hidden="true" style="width:96px;height:96px;object-fit:contain"></div>
           <div class="kit-empty__title">No prints yet</div>
           <p class="kit-empty__body">${Auth.user
             ? "You haven't submitted any prints from this account yet. Once you do, they'll sync to every device you sign in on."

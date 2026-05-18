@@ -173,16 +173,16 @@ function validateBulk(data) {
 }
 
 /* ─── email body templates ──────────────────────────────────────── */
-const SHELL_OPEN = `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:20px;background:#faf9f4">
-  <div style="background:#0e120d;border-radius:12px;padding:20px;margin-bottom:16px">
-    <h2 style="color:#2d9e5f;margin:0 0 4px;font-size:20px;font-family:sans-serif">Campus<span style="color:#fff">Print</span></h2>`;
-const SHELL_CLOSE = `</div><p style="margin-top:16px;font-size:11px;color:#aaa;font-family:monospace">CampusPrint · Pre-alpha</p></div>`;
+const _base = process.env.CANONICAL_ORIGIN || 'https://campusprint-pi.vercel.app';
+const SHELL_OPEN = `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:20px;background:#faf9f4">
+  <img src="${_base}/assets/img/email-banner.png" alt="CampusPrint" width="560" style="display:block;width:100%;border-radius:10px;margin-bottom:16px">`;
+const SHELL_CLOSE = `<p style="margin-top:20px;font-size:11px;color:#aaa;font-family:monospace;text-align:center">CampusPrint · Pre-alpha</p></div>`;
 const ROW = (label, value) =>
   `<tr><td style="padding:9px 12px;color:#6b6b6b;border-bottom:1px solid #e6e5dc;font-family:monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.06em">${label}</td><td style="padding:9px 12px;font-weight:600;text-align:right;border-bottom:1px solid #e6e5dc">${value}</td></tr>`;
 
 function bodyPrintJob(e) {
   return SHELL_OPEN +
-    `<p style="color:#999;font-size:11px;margin:0;font-family:monospace">New print job received</p></div>
+    `<p style="color:#0e4a26;font-size:11px;margin:0 0 16px;font-family:monospace;text-transform:uppercase;letter-spacing:0.1em">New print job received</p>
     <div style="background:#e9f3ec;border:1px dashed #1a6b3c;border-radius:8px;padding:16px;text-align:center;margin-bottom:16px">
       <p style="font-size:11px;color:#0e4a26;margin:0;text-transform:uppercase;letter-spacing:0.1em;font-family:monospace">Job Number</p>
       <p style="font-size:28px;font-weight:800;color:#0e4a26;margin:4px 0;letter-spacing:2px;font-family:monospace">${e.jobNum}</p>
@@ -199,7 +199,7 @@ function bodyPrintJob(e) {
 
 function bodyPrintJobCustomer(e) {
   return SHELL_OPEN +
-    `<p style="color:#999;font-size:11px;margin:0;font-family:monospace">Your print job is confirmed</p></div>
+    `<p style="color:#0e4a26;font-size:11px;margin:0 0 16px;font-family:monospace;text-transform:uppercase;letter-spacing:0.1em">Your print job is confirmed</p>
     <div style="background:#e9f3ec;border:1px dashed #1a6b3c;border-radius:8px;padding:16px;text-align:center;margin-bottom:16px">
       <p style="font-size:11px;color:#0e4a26;margin:0;text-transform:uppercase;letter-spacing:0.1em;font-family:monospace">Job Number</p>
       <p style="font-size:28px;font-weight:800;color:#0e4a26;margin:4px 0;letter-spacing:2px;font-family:monospace">${e.jobNum}</p>
@@ -216,7 +216,7 @@ function bodyPrintJobCustomer(e) {
 
 function bodyTopUp(e) {
   return SHELL_OPEN +
-    `<p style="color:#999;font-size:11px;margin:0;font-family:monospace">Print-credit top-up requested</p></div>
+    `<p style="color:#0e4a26;font-size:11px;margin:0 0 16px;font-family:monospace;text-transform:uppercase;letter-spacing:0.1em">Print-credit top-up requested</p>
     <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:8px;overflow:hidden">
       ${ROW('Amount', `${e.amount} pages`)}
       ${ROW('Student ID', e.studentId)}
@@ -228,7 +228,7 @@ function bodyTopUp(e) {
 
 function bodyBulk(e) {
   return SHELL_OPEN +
-    `<p style="color:#999;font-size:11px;margin:0;font-family:monospace">Bulk handout request (lecturer)</p></div>
+    `<p style="color:#0e4a26;font-size:11px;margin:0 0 16px;font-family:monospace;text-transform:uppercase;letter-spacing:0.1em">Bulk handout request (lecturer)</p>
     <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:8px;overflow:hidden">
       ${ROW('Lecturer ID', e.lecturerId)}
       ${ROW('Course', e.courseCode)}
