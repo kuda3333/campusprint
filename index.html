@@ -4,67 +4,54 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0e120d">
-<title>CampusPrint — Print release for Zimbabwean universities</title>
-<meta name="description" content="Submit any document from your phone. Walk to any campus kiosk. Pick up within 120 minutes. Built for the University of Zimbabwe, NUST, Midlands State University, Africa University and more.">
+<title>CampusPrint — Mobile print release</title>
+<meta name="description" content="Submit any document from your phone. Walk to any campus kiosk. Pick up within 120 minutes.">
 
-<!-- Open Graph -->
-<meta property="og:title" content="CampusPrint — Print release for Zimbabwean universities">
-<meta property="og:description" content="The mobile release layer for your university's print infrastructure. Billed institutionally, free at point of use.">
-<meta property="og:type" content="website">
-
-<!-- Fonts: Cabinet Grotesk (display) + Fraunces (editorial italic) + Inter (UI) + JetBrains Mono (code) -->
+<!-- Fonts: Cabinet Grotesk (wordmark) + Inter (UI) + JetBrains Mono (code) -->
 <link rel="preconnect" href="https://api.fontshare.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@500,700,800&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-/* ─── TOKENS (tinted neutrals, single-hue palette) ────────────── */
+/* ─── TOKENS ──────────────────────────────────────────────────────── */
 :root {
-  /* Type stack */
   --font-display: 'Cabinet Grotesk', 'Inter', system-ui, sans-serif;
-  --font-serif:   'Fraunces', Georgia, serif;
   --font-sans:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono:    'JetBrains Mono', ui-monospace, Menlo, monospace;
 
-  /* Tinted ink (pull the green hue into the warm-grey scale) */
   --ink-1: #0e120d;
   --ink-2: #1d211b;
   --ink-3: #4a4f45;
   --ink-4: #7d8275;
 
-  /* Tinted surfaces — NOT pure white */
   --paper:    #faf9f4;
   --paper-2:  #f4f3ec;
   --card:     #fdfcf7;
   --line:     #e6e5dc;
   --line-soft:#efeee5;
 
-  /* Brand — keep the green, deepen for hover */
   --accent:      #1a6b3c;
   --accent-deep: #0e4a26;
   --accent-tint: #e9f3ec;
+  --accent-mid:  #2d9e5f;
 
-  /* Semantic */
   --danger:      #b91c1c;
   --danger-tint: #fdf2f2;
 
-  /* Radii (6 / 10 / 14 / pill) */
   --r-pill: 999px;
   --r-sm: 6px;
   --r-md: 10px;
   --r-lg: 14px;
 
-  /* Motion */
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --t-fast: 150ms;
   --t-med:  240ms;
   --t-slow: 480ms;
 }
 
-/* ─── BASE ─────────────────────────────────────────────────────── */
+/* ─── BASE ────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 * { margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
@@ -88,17 +75,16 @@ ol, ul { list-style: none; }
 svg { display: block; }
 .icon    { width: 20px; height: 20px; flex-shrink: 0; }
 .icon-sm { width: 16px; height: 16px; flex-shrink: 0; }
-.icon-xs { width: 12px; height: 12px; flex-shrink: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
-/* ─── HEADER (sticky, blurred, minimal) ────────────────────────── */
+/* ─── HEADER (sticky, minimal, blurred) ─────────────────────────── */
 .app-header {
   position: sticky;
   top: 0;
   z-index: 60;
-  background: rgba(250, 249, 244, 0.78);
-  backdrop-filter: saturate(160%) blur(16px);
-  -webkit-backdrop-filter: saturate(160%) blur(16px);
+  background: rgba(250, 249, 244, 0.82);
+  backdrop-filter: saturate(160%) blur(14px);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
   border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
 }
 .app-header__inner {
@@ -131,252 +117,25 @@ svg { display: block; }
   color: var(--ink-4);
   text-transform: uppercase;
 }
-.app-header__cta {
-  display: inline-flex;
+.header-link {
+  display: none;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-family: var(--font-mono);
+  font-size: 11px;
   font-weight: 500;
-  color: var(--ink-2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
   padding: 8px 14px;
   border-radius: var(--r-pill);
-  background: transparent;
   border: 1px solid var(--line);
-  transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+  transition: all var(--t-fast) var(--ease);
 }
-.app-header__cta:hover { background: var(--ink-1); border-color: var(--ink-1); color: var(--paper); }
+.header-link:hover { background: var(--ink-1); border-color: var(--ink-1); color: var(--paper); }
+@media (min-width: 640px) { .header-link { display: inline-flex; } }
 
-/* ─── HERO (editorial, asymmetric, large display type) ────────── */
-.hero {
-  background: var(--paper);
-  padding: 56px 24px 64px;
-  position: relative;
-  overflow: hidden;
-}
-@media (min-width: 768px) { .hero { padding: 80px 32px 96px; } }
-@media (min-width: 1100px) { .hero { padding: 120px 48px 120px; } }
-
-.hero__inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 40px;
-  position: relative;
-  z-index: 1;
-}
-@media (min-width: 900px) {
-  .hero__inner { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 80px; align-items: end; }
-}
-
-.hero__eyebrow {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  color: var(--accent-deep);
-  text-transform: uppercase;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 32px;
-}
-.hero__eyebrow::before {
-  content: '';
-  width: 28px;
-  height: 1px;
-  background: var(--accent-deep);
-  flex-shrink: 0;
-}
-
-.hero__title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: clamp(40px, 8.5vw, 96px);
-  line-height: 0.94;
-  letter-spacing: -0.035em;
-  color: var(--ink-1);
-  text-wrap: balance;
-}
-.hero__title em {
-  font-family: var(--font-serif);
-  font-weight: 400;
-  font-style: italic;
-  font-optical-sizing: auto;
-  letter-spacing: -0.015em;
-  color: var(--accent-deep);
-}
-.hero__lede {
-  font-size: 17px;
-  line-height: 1.6;
-  color: var(--ink-3);
-  max-width: 500px;
-  margin-top: 32px;
-}
-@media (min-width: 768px) {
-  .hero__lede { font-size: 18px; margin-top: 40px; }
-}
-
-.hero__actions {
-  margin-top: 32px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 18px;
-}
-.hero__cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  height: 52px;
-  padding: 0 24px;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--paper);
-  background: var(--ink-1);
-  border: 1px solid var(--ink-1);
-  border-radius: var(--r-pill);
-  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-med) var(--ease), background var(--t-fast) var(--ease);
-}
-.hero__cta:hover { background: var(--accent-deep); border-color: var(--accent-deep); transform: translateY(-1px); box-shadow: 0 10px 28px -10px rgba(14,74,38,0.4); }
-.hero__cta:active { transform: translateY(0); }
-.hero__cta:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--accent-tint); }
-.hero__cta-meta {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--ink-4);
-  letter-spacing: 0.05em;
-}
-
-/* Right panel — list of supported universities */
-.hero__panel {
-  border-top: 1px solid var(--ink-1);
-  padding-top: 24px;
-  position: relative;
-}
-@media (min-width: 900px) {
-  .hero__panel { padding-top: 28px; padding-left: 0; }
-}
-
-.hero__panel-eyebrow {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  color: var(--ink-1);
-  text-transform: uppercase;
-  margin-bottom: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.hero__panel-count {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--ink-4);
-  letter-spacing: 0.02em;
-}
-.hero__list {
-  display: grid;
-  gap: 12px;
-}
-.hero__list-item {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 15px;
-  letter-spacing: -0.01em;
-  color: var(--ink-2);
-  line-height: 1.3;
-}
-.hero__list-num {
-  font-family: var(--font-mono);
-  font-weight: 500;
-  font-size: 10px;
-  color: var(--ink-4);
-  width: 16px;
-  flex-shrink: 0;
-}
-.hero__list-more {
-  margin-top: 4px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--ink-4);
-  letter-spacing: 0.04em;
-}
-
-/* Editorial decoration: massive faint type-as-imagery in hero corner */
-.hero__bg-type {
-  position: absolute;
-  pointer-events: none;
-  user-select: none;
-  bottom: -36px;
-  right: -24px;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: clamp(140px, 28vw, 360px);
-  line-height: 0.85;
-  letter-spacing: -0.06em;
-  color: var(--paper-2);
-  z-index: 0;
-  white-space: nowrap;
-}
-@media (max-width: 899px) { .hero__bg-type { display: none; } }
-
-/* ─── TRUST STRIP (replaces 3-col feature grid) ──────────────── */
-.trust {
-  background: var(--ink-1);
-  color: var(--paper);
-  padding: 28px 24px;
-  border-top: 1px solid var(--ink-1);
-  border-bottom: 1px solid var(--ink-1);
-  overflow: hidden;
-}
-.trust__inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-@media (min-width: 768px) {
-  .trust__inner { flex-direction: row; align-items: center; gap: 32px; }
-}
-.trust__eyebrow {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--paper) 60%, transparent);
-  flex-shrink: 0;
-}
-.trust__row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px 24px;
-  flex: 1;
-}
-.trust__row span {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 14px;
-  letter-spacing: -0.005em;
-  color: color-mix(in srgb, var(--paper) 88%, transparent);
-}
-.trust__row .dot { color: color-mix(in srgb, var(--paper) 30%, transparent); font-size: 16px; }
-
-/* ─── APP REGION (progress + form + rail) ──────────────────────── */
-.app-region {
-  background: var(--paper);
-  padding: 0;
-  scroll-margin-top: 72px;
-}
-
+/* ─── PROGRESS ──────────────────────────────────────────────────── */
 .progress {
   background: var(--card);
   border-bottom: 1px solid var(--line);
@@ -436,13 +195,13 @@ svg { display: block; }
 .shell {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 32px 24px 96px;
+  padding: 32px 24px 48px;
   display: grid;
   grid-template-columns: 1fr;
   gap: 24px;
 }
 @media (min-width: 1024px) {
-  .shell { grid-template-columns: minmax(0, 1fr) 340px; gap: 40px; padding: 48px 32px 120px; }
+  .shell { grid-template-columns: minmax(0, 1fr) 340px; gap: 40px; padding: 48px 32px 64px; }
 }
 .form-col { min-width: 0; }
 
@@ -665,9 +424,9 @@ svg { display: block; }
 .rail-col { display: none; }
 @media (min-width: 1024px) { .rail-col { display: block; } }
 .rail-card { position: sticky; top: 96px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 28px; }
-.rail-card + .rail-card { margin-top: 16px; }
+.rail-card + .rail-card { margin-top: 16px; position: static; }
 .rail__eyebrow { font-family: var(--font-mono); font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-4); margin-bottom: 12px; }
-.rail__headline { font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink-1); line-height: 1.12; margin-bottom: 12px; }
+.rail__headline { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink-1); line-height: 1.15; margin-bottom: 12px; }
 .rail__body { font-size: 13px; color: var(--ink-3); line-height: 1.55; }
 .rail__divider { height: 1px; background: var(--line); margin: 20px 0; }
 .rail__row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 8px 0; font-size: 12px; }
@@ -703,17 +462,170 @@ svg { display: block; }
 .receipt-row__value--ok { color: var(--accent-deep); display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end; }
 .receipt__actions { margin-top: 20px; }
 
+/* ─── MORE STUDENT SERVICES ─────────────────────────────────────── */
+.services {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 24px 96px;
+}
+@media (min-width: 1024px) { .services { padding: 32px 32px 120px; } }
+
+.services__head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.services__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: var(--ink-4);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.services__title {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 3.5vw, 30px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink-1);
+  line-height: 1.15;
+}
+.services__count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-4);
+  letter-spacing: 0.04em;
+}
+
+.services__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 640px)  { .services__grid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1024px) { .services__grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
+
+.service-card {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 22px 22px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 168px;
+  text-align: left;
+  transition: border-color var(--t-fast) var(--ease), transform var(--t-med) var(--ease), box-shadow var(--t-med) var(--ease);
+  cursor: pointer;
+  overflow: hidden;
+}
+.service-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-lg);
+  pointer-events: none;
+  background: radial-gradient(circle at 80% 0%, var(--accent-tint) 0%, transparent 55%);
+  opacity: 0;
+  transition: opacity var(--t-med) var(--ease);
+}
+.service-card:hover { border-color: var(--ink-3); transform: translateY(-2px); box-shadow: 0 12px 32px -16px rgba(14, 74, 38, 0.18); }
+.service-card:hover::before { opacity: 1; }
+.service-card:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-tint); }
+.service-card[data-status="soon"] { cursor: default; }
+.service-card[data-status="soon"]:hover { transform: none; box-shadow: none; border-color: var(--line); }
+.service-card[data-status="soon"]:hover::before { opacity: 0; }
+
+.service-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  background: var(--accent-tint);
+  color: var(--accent-deep);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+.service-card[data-status="soon"] .service-card__icon { background: var(--paper-2); color: var(--ink-4); }
+.service-card__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.015em;
+  color: var(--ink-1);
+  position: relative;
+  z-index: 1;
+}
+.service-card__desc {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-3);
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+.service-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+.service-card__pill {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+}
+.service-card__pill--active { background: var(--accent); color: var(--paper); }
+.service-card__pill--soon { background: var(--paper-2); color: var(--ink-4); border: 1px solid var(--line); }
+.service-card__arrow {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-pill);
+  background: var(--paper-2);
+  color: var(--ink-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.service-card:hover .service-card__arrow { background: var(--ink-1); color: var(--paper); transform: translateX(2px); }
+.service-card[data-status="soon"] .service-card__arrow { opacity: 0; }
+
 /* ─── FOOTER ────────────────────────────────────────────────────── */
-.footer { background: var(--ink-1); color: color-mix(in srgb, var(--paper) 70%, transparent); padding: 56px 24px 48px; }
-.footer__inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 32px; }
-@media (min-width: 768px) { .footer__inner { grid-template-columns: 2fr 1fr 1fr; gap: 48px; } }
-.footer__brand { font-family: var(--font-display); font-weight: 800; font-size: 22px; color: var(--paper); letter-spacing: -0.025em; }
-.footer__brand span { color: var(--accent-mid, #2d9e5f); }
-.footer__lede { font-size: 13px; line-height: 1.6; color: color-mix(in srgb, var(--paper) 55%, transparent); margin-top: 12px; max-width: 360px; }
-.footer__col-head { font-family: var(--font-mono); font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.14em; color: color-mix(in srgb, var(--paper) 55%, transparent); margin-bottom: 16px; }
-.footer__list { display: grid; gap: 10px; }
-.footer__list li { font-size: 13px; color: color-mix(in srgb, var(--paper) 80%, transparent); }
-.footer__meta { margin-top: 40px; padding-top: 24px; border-top: 1px solid color-mix(in srgb, var(--paper) 12%, transparent); font-family: var(--font-mono); font-size: 11px; color: color-mix(in srgb, var(--paper) 45%, transparent); letter-spacing: 0.04em; max-width: 1200px; margin-left: auto; margin-right: auto; }
+.footer {
+  border-top: 1px solid var(--line);
+  background: var(--card);
+}
+.footer__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 22px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-4);
+  letter-spacing: 0.04em;
+}
+.footer__brand { color: var(--ink-2); font-weight: 500; }
 
 /* ─── MOTION RESPECT ───────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
@@ -723,22 +635,11 @@ svg { display: block; }
 
 /* ─── PRINT ─────────────────────────────────────────────────────── */
 @media print {
-  .app-header, .hero, .trust, .progress, .rail-col, .receipt__actions, .footer { display: none !important; }
+  .app-header, .progress, .rail-col, .receipt__actions, .services, .footer { display: none !important; }
   body { background: #fff; }
   .receipt-card { border: none; box-shadow: none; }
   .receipt__top { background: #fff; color: #000; }
   .receipt__time { color: #888; }
-}
-
-/* ─── ENTRANCE REVEAL (intersection observer driven) ────────── */
-.reveal { opacity: 0; transform: translateY(12px); transition: opacity 600ms var(--ease), transform 600ms var(--ease); }
-.reveal.is-in { opacity: 1; transform: translateY(0); }
-.reveal-1 { transition-delay: 60ms; }
-.reveal-2 { transition-delay: 120ms; }
-.reveal-3 { transition-delay: 180ms; }
-.reveal-4 { transition-delay: 240ms; }
-@media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; transform: none; transition: none; }
 }
 </style>
 </head>
@@ -752,15 +653,8 @@ svg { display: block; }
       <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
       <rect width="12" height="8" x="6" y="14" rx="1"/>
     </symbol>
-    <symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>
-    </symbol>
-    <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
-    </symbol>
-    <symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>
-    </symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
     <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
     <symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
@@ -770,345 +664,338 @@ svg { display: block; }
     <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
     <symbol id="i-loader" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></symbol>
     <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></symbol>
+
+    <!-- Service icons -->
+    <symbol id="i-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>
+    </symbol>
+    <symbol id="i-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/><path d="M3 7h17a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H3"/><circle cx="16" cy="12" r="1.25"/>
+    </symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/>
+    </symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </symbol>
+    <symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/>
+    </symbol>
+    <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/>
+    </symbol>
   </defs>
 </svg>
 
-<!-- ─── HEADER ─────────────────────────────────────────────────── -->
 <header class="app-header">
   <div class="app-header__inner">
     <a href="#top" class="brand" aria-label="CampusPrint home">
       <span class="brand__name">Campus<span class="brand__mark">Print</span></span>
       <span class="brand__tag">Print release · v0.1</span>
     </a>
-    <a href="#app" class="app-header__cta">
-      Submit a job
-      <svg class="icon-sm"><use href="#i-arrow-down"/></svg>
+    <a href="#services" class="header-link">
+      More services
+      <svg class="icon-sm"><use href="#i-arrow-right"/></svg>
     </a>
   </div>
 </header>
 
-<!-- ─── HERO ───────────────────────────────────────────────────── -->
-<section class="hero" id="top">
-  <div class="hero__bg-type" aria-hidden="true">PRINT.</div>
-  <div class="hero__inner">
-    <div>
-      <div class="hero__eyebrow reveal">Print release · For Zimbabwean universities</div>
-      <h1 class="hero__title reveal reveal-1">
-        Print where you study.<br>
-        <em>Collect within two hours.</em>
-      </h1>
-      <p class="hero__lede reveal reveal-2">
-        CampusPrint is the mobile release layer for your university's print infrastructure.
-        Submit any document from your phone — pick it up at any kiosk on your campus. Billed
-        institutionally, free at point of use.
-      </p>
-      <div class="hero__actions reveal reveal-3">
-        <a href="#app" class="hero__cta">
-          Start a print job
-          <svg class="icon-sm"><use href="#i-arrow-down"/></svg>
-        </a>
-        <span class="hero__cta-meta">No login · 2-min flow</span>
-      </div>
-    </div>
-
-    <aside class="hero__panel reveal reveal-4" aria-label="Supported Zimbabwean institutions">
-      <div class="hero__panel-eyebrow">
-        <span>Supported institutions</span>
-        <span class="hero__panel-count" id="hero-count">12</span>
-      </div>
-      <ol class="hero__list">
-        <li class="hero__list-item"><span class="hero__list-num">01</span>University of Zimbabwe</li>
-        <li class="hero__list-item"><span class="hero__list-num">02</span>National University of Science &amp; Technology</li>
-        <li class="hero__list-item"><span class="hero__list-num">03</span>Midlands State University</li>
-        <li class="hero__list-item"><span class="hero__list-num">04</span>Africa University</li>
-        <li class="hero__list-item"><span class="hero__list-num">05</span>Chinhoyi University of Technology</li>
-        <li class="hero__list-item"><span class="hero__list-num">06</span>Harare Institute of Technology</li>
-      </ol>
-      <div class="hero__list-more">+ 6 more institutions in the selector below</div>
-    </aside>
+<nav class="progress" id="progress-wrap" aria-label="Print submission steps">
+  <div class="progress__inner">
+    <ol class="steps">
+      <li class="steps__item is-active" id="ps1"><span class="steps__dot" id="pd1">1</span><span class="steps__label">Print</span></li>
+      <li class="steps__bar" id="pl1" aria-hidden="true"></li>
+      <li class="steps__item" id="ps2"><span class="steps__dot" id="pd2">2</span><span class="steps__label">Contact</span></li>
+      <li class="steps__bar" id="pl2" aria-hidden="true"></li>
+      <li class="steps__item" id="ps3"><span class="steps__dot" id="pd3">3</span><span class="steps__label">Done</span></li>
+    </ol>
   </div>
-</section>
+</nav>
 
-<!-- ─── TRUST STRIP ────────────────────────────────────────────── -->
-<section class="trust" aria-label="Available across Zimbabwean campuses">
-  <div class="trust__inner">
-    <span class="trust__eyebrow">Available across</span>
-    <div class="trust__row">
-      <span>UZ</span><span class="dot">·</span>
-      <span>NUST</span><span class="dot">·</span>
-      <span>MSU</span><span class="dot">·</span>
-      <span>AU</span><span class="dot">·</span>
-      <span>CUT</span><span class="dot">·</span>
-      <span>BUSE</span><span class="dot">·</span>
-      <span>GZU</span><span class="dot">·</span>
-      <span>LSU</span><span class="dot">·</span>
-      <span>HIT</span><span class="dot">·</span>
-      <span>CUZ</span><span class="dot">·</span>
-      <span>ZOU</span><span class="dot">·</span>
-      <span>SU</span>
-    </div>
-  </div>
-</section>
+<div class="shell" id="top">
+  <main class="form-col">
 
-<!-- ─── APP REGION ─────────────────────────────────────────────── -->
-<div class="app-region" id="app">
+    <!-- STEP 1 -->
+    <section class="section is-visible" id="step1" aria-labelledby="t-step1">
+      <div class="section__eyebrow">Step 1 of 2</div>
+      <h2 class="section__title" id="t-step1">Print job details</h2>
 
-  <nav class="progress" id="progress-wrap" aria-label="Print submission steps">
-    <div class="progress__inner">
-      <ol class="steps">
-        <li class="steps__item is-active" id="ps1"><span class="steps__dot" id="pd1">1</span><span class="steps__label">Print</span></li>
-        <li class="steps__bar" id="pl1" aria-hidden="true"></li>
-        <li class="steps__item" id="ps2"><span class="steps__dot" id="pd2">2</span><span class="steps__label">Contact</span></li>
-        <li class="steps__bar" id="pl2" aria-hidden="true"></li>
-        <li class="steps__item" id="ps3"><span class="steps__dot" id="pd3">3</span><span class="steps__label">Done</span></li>
-      </ol>
-    </div>
-  </nav>
+      <div class="field">
+        <label class="field__label" for="university">Your university</label>
+        <select id="university" class="select" required>
+          <option value="">Select your university</option>
+        </select>
+      </div>
 
-  <div class="shell">
-    <main class="form-col">
+      <div class="field">
+        <label class="field__label" for="location">Kiosk on campus</label>
+        <select id="location" class="select" required disabled>
+          <option value="">Select your university first</option>
+        </select>
+      </div>
 
-      <!-- STEP 1 -->
-      <section class="section is-visible" id="step1" aria-labelledby="t-step1">
-        <div class="section__eyebrow">Step 1 of 2</div>
-        <h2 class="section__title" id="t-step1">Print job details</h2>
-
-        <div class="field">
-          <label class="field__label" for="university">Your university</label>
-          <select id="university" class="select" required>
-            <option value="">Select your university</option>
-          </select>
+      <div class="field">
+        <label class="field__label">Number of copies</label>
+        <div class="copies">
+          <button type="button" class="stepper" aria-label="Decrease copies"
+            onpointerdown="startHold(-1)" onpointerup="stopHold()" onpointerleave="stopHold()" onpointercancel="stopHold()"
+            onclick="stepCopies(-1)"><svg class="icon-sm"><use href="#i-minus"/></svg></button>
+          <input type="number" id="copies-input" class="copies__value" min="2" max="400" value="2"
+            inputmode="numeric" aria-label="Number of copies"
+            oninput="onCopiesInput(this)" onblur="onCopiesBlur(this)">
+          <button type="button" class="stepper" aria-label="Increase copies"
+            onpointerdown="startHold(1)" onpointerup="stopHold()" onpointerleave="stopHold()" onpointercancel="stopHold()"
+            onclick="stepCopies(1)"><svg class="icon-sm"><use href="#i-plus"/></svg></button>
         </div>
-
-        <div class="field">
-          <label class="field__label" for="location">Kiosk on campus</label>
-          <select id="location" class="select" required disabled>
-            <option value="">Select your university first</option>
-          </select>
+        <div class="copies__quick">
+          <span class="quick-label">Jump to</span>
+          <button type="button" class="quick" onclick="setCopies(10)">10</button>
+          <button type="button" class="quick" onclick="setCopies(20)">20</button>
+          <button type="button" class="quick" onclick="setCopies(50)">50</button>
+          <button type="button" class="quick" onclick="setCopies(100)">100</button>
+          <button type="button" class="quick" onclick="setCopies(200)">200</button>
+          <button type="button" class="quick" onclick="setCopies(400)">400</button>
         </div>
+        <div class="field__hint">Between 2 and 400 copies per job.</div>
+      </div>
 
-        <div class="field">
-          <label class="field__label">Number of copies</label>
-          <div class="copies">
-            <button type="button" class="stepper" aria-label="Decrease copies"
-              onpointerdown="startHold(-1)" onpointerup="stopHold()" onpointerleave="stopHold()" onpointercancel="stopHold()"
-              onclick="stepCopies(-1)"><svg class="icon-sm"><use href="#i-minus"/></svg></button>
-            <input type="number" id="copies-input" class="copies__value" min="2" max="400" value="2"
-              inputmode="numeric" aria-label="Number of copies"
-              oninput="onCopiesInput(this)" onblur="onCopiesBlur(this)">
-            <button type="button" class="stepper" aria-label="Increase copies"
-              onpointerdown="startHold(1)" onpointerup="stopHold()" onpointerleave="stopHold()" onpointercancel="stopHold()"
-              onclick="stepCopies(1)"><svg class="icon-sm"><use href="#i-plus"/></svg></button>
-          </div>
-          <div class="copies__quick">
-            <span class="quick-label">Jump to</span>
-            <button type="button" class="quick" onclick="setCopies(10)">10</button>
-            <button type="button" class="quick" onclick="setCopies(20)">20</button>
-            <button type="button" class="quick" onclick="setCopies(50)">50</button>
-            <button type="button" class="quick" onclick="setCopies(100)">100</button>
-            <button type="button" class="quick" onclick="setCopies(200)">200</button>
-            <button type="button" class="quick" onclick="setCopies(400)">400</button>
-          </div>
-          <div class="field__hint">Between 2 and 400 copies per job.</div>
-        </div>
-
-        <div class="field">
-          <label class="field__label">Paper type</label>
-          <div class="toggle-group toggle-group--four" role="radiogroup" aria-label="Paper type">
-            <button type="button" class="toggle is-selected" role="radio" aria-checked="true" onclick="selectPaper(this,'A4 Standard')"><svg class="toggle__check"><use href="#i-check"/></svg>A4 Standard</button>
-            <button type="button" class="toggle" role="radio" aria-checked="false" onclick="selectPaper(this,'A4 Glossy')"><svg class="toggle__check"><use href="#i-check"/></svg>A4 Glossy</button>
-            <button type="button" class="toggle" role="radio" aria-checked="false" onclick="selectPaper(this,'A3 Standard')"><svg class="toggle__check"><use href="#i-check"/></svg>A3 Standard</button>
-            <button type="button" class="toggle" role="radio" aria-checked="false" onclick="selectPaper(this,'Legal Size')"><svg class="toggle__check"><use href="#i-check"/></svg>Legal</button>
-          </div>
-        </div>
-
-        <div class="field">
-          <label class="field__label">Print sides</label>
-          <div class="toggle-group" role="radiogroup" aria-label="Print sides">
-            <button type="button" class="toggle is-selected" role="radio" aria-checked="true" onclick="selectSide(this,'Single sided')"><svg class="toggle__check"><use href="#i-check"/></svg>Single sided</button>
-            <button type="button" class="toggle" role="radio" aria-checked="false" onclick="selectSide(this,'Double sided')"><svg class="toggle__check"><use href="#i-check"/></svg>Double sided</button>
-          </div>
-        </div>
-
-        <div class="field">
-          <label class="field__label">Upload document or image</label>
-          <div class="upload" id="upload-zone">
-            <input type="file" id="file-input" class="upload__input"
-              accept=".doc,.docx,.xls,.xlsx,.ppt,.pptx,.pdf,.txt,.rtf,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp"
-              onchange="handleFile(this)" aria-label="Upload print file">
-            <svg class="upload__icon"><use href="#i-upload"/></svg>
-            <div class="upload__main">Tap to upload your file</div>
-            <div class="upload__sub">PDF · Word · Excel · PowerPoint · Images · up to 50MB</div>
-          </div>
-          <div class="upload-success" id="upload-success" style="margin-top:10px">
-            <div class="upload-success__icon"><svg class="icon"><use href="#i-file"/></svg></div>
-            <div class="upload-success__body">
-              <div class="upload-success__name" id="file-name-display"></div>
-              <div class="upload-success__size" id="file-size-display"></div>
-            </div>
-            <button type="button" class="upload-success__remove" onclick="removeFile()" aria-label="Remove file">
-              <svg class="icon-sm"><use href="#i-x"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <div class="summary">
-          <svg class="summary__icon icon"><use href="#i-printer"/></svg>
-          <div>
-            <div class="summary__label">Print summary</div>
-            <div class="summary__text" id="cost-note">2 copies · A4 Standard · Single sided</div>
-          </div>
-        </div>
-
-        <div class="error" id="err1" role="alert">
-          <svg class="icon-sm"><use href="#i-alert"/></svg>
-          <span>Please pick your university, kiosk, and upload a file.</span>
-        </div>
-
-        <button class="btn btn--primary" onclick="goStep(2)">
-          Continue
-          <svg class="icon"><use href="#i-arrow-right"/></svg>
-        </button>
-      </section>
-
-      <!-- STEP 2 -->
-      <section class="section" id="step2" aria-labelledby="t-step2">
-        <div class="section__eyebrow">Step 2 of 2</div>
-        <h2 class="section__title" id="t-step2">Where should we reach you?</h2>
-
-        <div class="field">
-          <label class="field__label" for="student-id">Student ID</label>
-          <input id="student-id" class="input" type="text" placeholder="e.g. R123456Y" autocomplete="off">
-        </div>
-
-        <div class="field">
-          <label class="field__label" for="email">Email address</label>
-          <input id="email" class="input" type="email" placeholder="you@students.uz.ac.zw" autocomplete="email" inputmode="email">
-        </div>
-
-        <div class="field">
-          <label class="field__label" for="phone">Phone number</label>
-          <input id="phone" class="input" type="tel" placeholder="07X XXX XXXX" autocomplete="tel" inputmode="tel">
-        </div>
-
-        <label class="tc">
-          <span class="tc__check">
-            <input type="checkbox" id="tc-check">
-            <span class="tc__check-box"><svg><use href="#i-check"/></svg></span>
-          </span>
-          <span class="tc__text">
-            I confirm my print details are correct and agree to the
-            <a onclick="alert('Prints are non-refundable once submitted. Collect within 2 hours. CampusPrint is not liable for files incompatible with the printer.')" tabindex="0">Terms &amp; Conditions</a>.
-          </span>
-        </label>
-
-        <div class="error" id="err2" role="alert">
-          <svg class="icon-sm"><use href="#i-alert"/></svg>
-          <span>Please complete every field and accept the Terms &amp; Conditions.</span>
-        </div>
-
-        <button class="btn btn--primary" id="checkout-btn" onclick="checkout()">
-          <span>Submit print request</span>
-          <svg class="icon"><use href="#i-arrow-right"/></svg>
-        </button>
-        <button class="btn btn--ghost" onclick="goStep(1)">
-          <svg class="icon"><use href="#i-arrow-left"/></svg>
-          Back
-        </button>
-      </section>
-
-      <!-- RECEIPT -->
-      <section class="receipt" id="receipt-screen" aria-labelledby="t-receipt">
-        <div class="receipt-card">
-          <div class="receipt__top">
-            <div class="receipt__check">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="m5 12 5 5L20 7"/>
-              </svg>
-            </div>
-            <h2 class="receipt__title" id="t-receipt">Print request submitted</h2>
-            <p class="receipt__time" id="receipt-time"></p>
-          </div>
-          <div class="receipt__body">
-            <div class="job-code">
-              <div class="job-code__label">Print job number</div>
-              <div class="job-code__value" id="job-number"></div>
-              <div class="job-code__hint">Show this at the kiosk to collect your prints</div>
-            </div>
-            <div class="receipt-row"><span class="receipt-row__label">Student ID</span><span class="receipt-row__value" id="r-studentid"></span></div>
-            <div class="receipt-row"><span class="receipt-row__label">File</span><span class="receipt-row__value" id="r-file"></span></div>
-            <div class="receipt-row"><span class="receipt-row__label">University</span><span class="receipt-row__value" id="r-university"></span></div>
-            <div class="receipt-row"><span class="receipt-row__label">Kiosk</span><span class="receipt-row__value" id="r-location"></span></div>
-            <div class="receipt-row"><span class="receipt-row__label">Copies</span><span class="receipt-row__value" id="r-copies"></span></div>
-            <div class="receipt-row"><span class="receipt-row__label">Paper</span><span class="receipt-row__value" id="r-paper"></span></div>
-            <div class="receipt-row"><span class="receipt-row__label">Sides</span><span class="receipt-row__value" id="r-sides"></span></div>
-            <div class="receipt-row"><span class="receipt-row__label">Status</span><span class="receipt-row__value receipt-row__value--ok"><svg class="icon-sm"><use href="#i-check-circle"/></svg> Sent to printer</span></div>
-            <div class="receipt-row"><span class="receipt-row__label">Email</span><span class="receipt-row__value" id="r-email"></span></div>
-            <div class="receipt-row"><span class="receipt-row__label">Phone</span><span class="receipt-row__value" id="r-phone"></span></div>
-            <div class="receipt-row"><span class="receipt-row__label">Collect</span><span class="receipt-row__value" id="r-printtime"></span></div>
-          </div>
-        </div>
-        <div class="receipt__actions">
-          <button class="btn btn--primary" onclick="window.print()">Save / Print receipt</button>
-          <button class="btn btn--ghost" onclick="resetApp()">Start new print job</button>
-        </div>
-      </section>
-
-    </main>
-
-    <aside class="rail-col" aria-label="Submission summary">
-      <div class="rail-card">
-        <div class="rail__eyebrow">CampusPrint</div>
-        <div class="rail__headline">The mobile release layer for your campus printers.</div>
-        <div class="rail__body">
-          Designed to sit on top of your university's existing print infrastructure
-          (PaperCut, Universal Print, IPP). Institution-billed, no per-job
-          micropayments to students.
+      <div class="field">
+        <label class="field__label">Paper type</label>
+        <div class="toggle-group toggle-group--four" role="radiogroup" aria-label="Paper type">
+          <button type="button" class="toggle is-selected" role="radio" aria-checked="true" onclick="selectPaper(this,'A4 Standard')"><svg class="toggle__check"><use href="#i-check"/></svg>A4 Standard</button>
+          <button type="button" class="toggle" role="radio" aria-checked="false" onclick="selectPaper(this,'A4 Glossy')"><svg class="toggle__check"><use href="#i-check"/></svg>A4 Glossy</button>
+          <button type="button" class="toggle" role="radio" aria-checked="false" onclick="selectPaper(this,'A3 Standard')"><svg class="toggle__check"><use href="#i-check"/></svg>A3 Standard</button>
+          <button type="button" class="toggle" role="radio" aria-checked="false" onclick="selectPaper(this,'Legal Size')"><svg class="toggle__check"><use href="#i-check"/></svg>Legal</button>
         </div>
       </div>
-      <div class="rail-card">
-        <div class="rail__eyebrow">Live submission</div>
-        <div class="rail__row"><span class="rail__row-label">University</span><span class="rail__row-value rail__row-value--muted" id="rail-university">Not selected</span></div>
-        <div class="rail__row"><span class="rail__row-label">Kiosk</span><span class="rail__row-value rail__row-value--muted" id="rail-kiosk">Not selected</span></div>
-        <div class="rail__row"><span class="rail__row-label">File</span><span class="rail__row-value rail__row-value--muted" id="rail-file">No file uploaded</span></div>
-        <div class="rail__divider"></div>
-        <div class="rail__row"><span class="rail__row-label">Copies</span><span class="rail__row-value" id="rail-copies">2</span></div>
-        <div class="rail__row"><span class="rail__row-label">Paper</span><span class="rail__row-value" id="rail-paper">A4 Standard</span></div>
-        <div class="rail__row"><span class="rail__row-label">Sides</span><span class="rail__row-value" id="rail-sides">Single sided</span></div>
+
+      <div class="field">
+        <label class="field__label">Print sides</label>
+        <div class="toggle-group" role="radiogroup" aria-label="Print sides">
+          <button type="button" class="toggle is-selected" role="radio" aria-checked="true" onclick="selectSide(this,'Single sided')"><svg class="toggle__check"><use href="#i-check"/></svg>Single sided</button>
+          <button type="button" class="toggle" role="radio" aria-checked="false" onclick="selectSide(this,'Double sided')"><svg class="toggle__check"><use href="#i-check"/></svg>Double sided</button>
+        </div>
       </div>
-    </aside>
-  </div>
+
+      <div class="field">
+        <label class="field__label">Upload document or image</label>
+        <div class="upload" id="upload-zone">
+          <input type="file" id="file-input" class="upload__input"
+            accept=".doc,.docx,.xls,.xlsx,.ppt,.pptx,.pdf,.txt,.rtf,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp"
+            onchange="handleFile(this)" aria-label="Upload print file">
+          <svg class="upload__icon"><use href="#i-upload"/></svg>
+          <div class="upload__main">Tap to upload your file</div>
+          <div class="upload__sub">PDF · Word · Excel · PowerPoint · Images · up to 50MB</div>
+        </div>
+        <div class="upload-success" id="upload-success" style="margin-top:10px">
+          <div class="upload-success__icon"><svg class="icon"><use href="#i-file"/></svg></div>
+          <div class="upload-success__body">
+            <div class="upload-success__name" id="file-name-display"></div>
+            <div class="upload-success__size" id="file-size-display"></div>
+          </div>
+          <button type="button" class="upload-success__remove" onclick="removeFile()" aria-label="Remove file">
+            <svg class="icon-sm"><use href="#i-x"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="summary">
+        <svg class="summary__icon icon"><use href="#i-printer"/></svg>
+        <div>
+          <div class="summary__label">Print summary</div>
+          <div class="summary__text" id="cost-note">2 copies · A4 Standard · Single sided</div>
+        </div>
+      </div>
+
+      <div class="error" id="err1" role="alert">
+        <svg class="icon-sm"><use href="#i-alert"/></svg>
+        <span>Please pick your university, kiosk, and upload a file.</span>
+      </div>
+
+      <button class="btn btn--primary" onclick="goStep(2)">
+        Continue
+        <svg class="icon"><use href="#i-arrow-right"/></svg>
+      </button>
+    </section>
+
+    <!-- STEP 2 -->
+    <section class="section" id="step2" aria-labelledby="t-step2">
+      <div class="section__eyebrow">Step 2 of 2</div>
+      <h2 class="section__title" id="t-step2">Where should we reach you?</h2>
+
+      <div class="field">
+        <label class="field__label" for="student-id">Student ID</label>
+        <input id="student-id" class="input" type="text" placeholder="e.g. R123456Y" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="email">Email address</label>
+        <input id="email" class="input" type="email" placeholder="you@students.uz.ac.zw" autocomplete="email" inputmode="email">
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="phone">Phone number</label>
+        <input id="phone" class="input" type="tel" placeholder="07X XXX XXXX" autocomplete="tel" inputmode="tel">
+      </div>
+
+      <label class="tc">
+        <span class="tc__check">
+          <input type="checkbox" id="tc-check">
+          <span class="tc__check-box"><svg><use href="#i-check"/></svg></span>
+        </span>
+        <span class="tc__text">
+          I confirm my print details are correct and agree to the
+          <a onclick="alert('Prints are non-refundable once submitted. Collect within 2 hours. CampusPrint is not liable for files incompatible with the printer.')" tabindex="0">Terms &amp; Conditions</a>.
+        </span>
+      </label>
+
+      <div class="error" id="err2" role="alert">
+        <svg class="icon-sm"><use href="#i-alert"/></svg>
+        <span>Please complete every field and accept the Terms &amp; Conditions.</span>
+      </div>
+
+      <button class="btn btn--primary" id="checkout-btn" onclick="checkout()">
+        <span>Submit print request</span>
+        <svg class="icon"><use href="#i-arrow-right"/></svg>
+      </button>
+      <button class="btn btn--ghost" onclick="goStep(1)">
+        <svg class="icon"><use href="#i-arrow-left"/></svg>
+        Back
+      </button>
+    </section>
+
+    <!-- RECEIPT -->
+    <section class="receipt" id="receipt-screen" aria-labelledby="t-receipt">
+      <div class="receipt-card">
+        <div class="receipt__top">
+          <div class="receipt__check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m5 12 5 5L20 7"/>
+            </svg>
+          </div>
+          <h2 class="receipt__title" id="t-receipt">Print request submitted</h2>
+          <p class="receipt__time" id="receipt-time"></p>
+        </div>
+        <div class="receipt__body">
+          <div class="job-code">
+            <div class="job-code__label">Print job number</div>
+            <div class="job-code__value" id="job-number"></div>
+            <div class="job-code__hint">Show this at the kiosk to collect your prints</div>
+          </div>
+          <div class="receipt-row"><span class="receipt-row__label">Student ID</span><span class="receipt-row__value" id="r-studentid"></span></div>
+          <div class="receipt-row"><span class="receipt-row__label">File</span><span class="receipt-row__value" id="r-file"></span></div>
+          <div class="receipt-row"><span class="receipt-row__label">University</span><span class="receipt-row__value" id="r-university"></span></div>
+          <div class="receipt-row"><span class="receipt-row__label">Kiosk</span><span class="receipt-row__value" id="r-location"></span></div>
+          <div class="receipt-row"><span class="receipt-row__label">Copies</span><span class="receipt-row__value" id="r-copies"></span></div>
+          <div class="receipt-row"><span class="receipt-row__label">Paper</span><span class="receipt-row__value" id="r-paper"></span></div>
+          <div class="receipt-row"><span class="receipt-row__label">Sides</span><span class="receipt-row__value" id="r-sides"></span></div>
+          <div class="receipt-row"><span class="receipt-row__label">Status</span><span class="receipt-row__value receipt-row__value--ok"><svg class="icon-sm"><use href="#i-check-circle"/></svg> Sent to printer</span></div>
+          <div class="receipt-row"><span class="receipt-row__label">Email</span><span class="receipt-row__value" id="r-email"></span></div>
+          <div class="receipt-row"><span class="receipt-row__label">Phone</span><span class="receipt-row__value" id="r-phone"></span></div>
+          <div class="receipt-row"><span class="receipt-row__label">Collect</span><span class="receipt-row__value" id="r-printtime"></span></div>
+        </div>
+      </div>
+      <div class="receipt__actions">
+        <button class="btn btn--primary" onclick="window.print()">Save / Print receipt</button>
+        <button class="btn btn--ghost" onclick="resetApp()">Start new print job</button>
+      </div>
+    </section>
+
+  </main>
+
+  <aside class="rail-col" aria-label="Submission summary">
+    <div class="rail-card">
+      <div class="rail__eyebrow">Live submission</div>
+      <div class="rail__row"><span class="rail__row-label">University</span><span class="rail__row-value rail__row-value--muted" id="rail-university">Not selected</span></div>
+      <div class="rail__row"><span class="rail__row-label">Kiosk</span><span class="rail__row-value rail__row-value--muted" id="rail-kiosk">Not selected</span></div>
+      <div class="rail__row"><span class="rail__row-label">File</span><span class="rail__row-value rail__row-value--muted" id="rail-file">No file uploaded</span></div>
+      <div class="rail__divider"></div>
+      <div class="rail__row"><span class="rail__row-label">Copies</span><span class="rail__row-value" id="rail-copies">2</span></div>
+      <div class="rail__row"><span class="rail__row-label">Paper</span><span class="rail__row-value" id="rail-paper">A4 Standard</span></div>
+      <div class="rail__row"><span class="rail__row-label">Sides</span><span class="rail__row-value" id="rail-sides">Single sided</span></div>
+    </div>
+  </aside>
 </div>
 
-<!-- ─── FOOTER ─────────────────────────────────────────────────── -->
+<!-- ─── MORE STUDENT SERVICES ──────────────────────────────────── -->
+<section class="services" id="services" aria-labelledby="services-title">
+  <div class="services__head">
+    <div>
+      <div class="services__eyebrow">More for students</div>
+      <h2 class="services__title" id="services-title">Other campus services</h2>
+    </div>
+    <span class="services__count">6 services · 1 live</span>
+  </div>
+
+  <div class="services__grid">
+
+    <button class="service-card" data-status="soon" type="button" aria-label="My print history — coming soon">
+      <div class="service-card__icon"><svg class="icon"><use href="#i-history"/></svg></div>
+      <div class="service-card__title">My print history</div>
+      <p class="service-card__desc">Every job you've submitted from this device — re-print, re-collect, or contest a job.</p>
+      <div class="service-card__foot">
+        <span class="service-card__pill service-card__pill--soon">Coming soon</span>
+        <span class="service-card__arrow" aria-hidden="true"><svg class="icon-sm"><use href="#i-arrow-right"/></svg></span>
+      </div>
+    </button>
+
+    <button class="service-card" data-status="soon" type="button" aria-label="Top up print credit — coming soon">
+      <div class="service-card__icon"><svg class="icon"><use href="#i-wallet"/></svg></div>
+      <div class="service-card__title">Top up print credit</div>
+      <p class="service-card__desc">Check your institutional print quota and top up if you've gone over your allocation.</p>
+      <div class="service-card__foot">
+        <span class="service-card__pill service-card__pill--soon">Coming soon</span>
+        <span class="service-card__arrow" aria-hidden="true"><svg class="icon-sm"><use href="#i-arrow-right"/></svg></span>
+      </div>
+    </button>
+
+    <button class="service-card" data-status="soon" type="button" aria-label="Scan to email — coming soon">
+      <div class="service-card__icon"><svg class="icon"><use href="#i-scan"/></svg></div>
+      <div class="service-card__title">Scan to email</div>
+      <p class="service-card__desc">At any kiosk, drop a document into the scanner and have it emailed to you as a PDF.</p>
+      <div class="service-card__foot">
+        <span class="service-card__pill service-card__pill--soon">Coming soon</span>
+        <span class="service-card__arrow" aria-hidden="true"><svg class="icon-sm"><use href="#i-arrow-right"/></svg></span>
+      </div>
+    </button>
+
+    <button class="service-card" data-status="soon" type="button" aria-label="Bulk handouts for lecturers — coming soon">
+      <div class="service-card__icon"><svg class="icon"><use href="#i-users"/></svg></div>
+      <div class="service-card__title">Bulk handouts (lecturers)</div>
+      <p class="service-card__desc">Submit large-volume jobs with stapling, hole-punching, or delivery to a lecture hall.</p>
+      <div class="service-card__foot">
+        <span class="service-card__pill service-card__pill--soon">Coming soon</span>
+        <span class="service-card__arrow" aria-hidden="true"><svg class="icon-sm"><use href="#i-arrow-right"/></svg></span>
+      </div>
+    </button>
+
+    <button class="service-card" data-status="soon" type="button" aria-label="Find a kiosk — coming soon">
+      <div class="service-card__icon"><svg class="icon"><use href="#i-map"/></svg></div>
+      <div class="service-card__title">Find a kiosk</div>
+      <p class="service-card__desc">Live kiosk map, hours, and printer status across every campus building.</p>
+      <div class="service-card__foot">
+        <span class="service-card__pill service-card__pill--soon">Coming soon</span>
+        <span class="service-card__arrow" aria-hidden="true"><svg class="icon-sm"><use href="#i-arrow-right"/></svg></span>
+      </div>
+    </button>
+
+    <button class="service-card" data-status="soon" type="button" aria-label="Past papers archive — coming soon">
+      <div class="service-card__icon"><svg class="icon"><use href="#i-book"/></svg></div>
+      <div class="service-card__title">Past papers archive</div>
+      <p class="service-card__desc">Browse and print exam papers from previous years for your faculty.</p>
+      <div class="service-card__foot">
+        <span class="service-card__pill service-card__pill--soon">Coming soon</span>
+        <span class="service-card__arrow" aria-hidden="true"><svg class="icon-sm"><use href="#i-arrow-right"/></svg></span>
+      </div>
+    </button>
+
+  </div>
+</section>
+
 <footer class="footer">
   <div class="footer__inner">
-    <div>
-      <div class="footer__brand">Campus<span style="color:#2d9e5f">Print</span></div>
-      <p class="footer__lede">
-        Print release for Zimbabwean universities. Pre-alpha — currently piloting integrations
-        with PaperCut, Microsoft Universal Print, and IPP-compatible campus print servers.
-      </p>
-    </div>
-    <div>
-      <div class="footer__col-head">For</div>
-      <ul class="footer__list">
-        <li>Students</li>
-        <li>Lecturers</li>
-        <li>IT departments</li>
-        <li>Procurement</li>
-      </ul>
-    </div>
-    <div>
-      <div class="footer__col-head">Reach</div>
-      <ul class="footer__list">
-        <li>hello@campusprint.zw</li>
-        <li>Harare, Zimbabwe</li>
-      </ul>
-    </div>
-  </div>
-  <div class="footer__meta">
-    © 2026 CampusPrint · Collect within 2 hours of confirmation · Pre-alpha
+    <span class="footer__brand">CampusPrint</span>
+    <span>Collect within 2 hours · Pre-alpha · v0.1</span>
   </div>
 </footer>
 
@@ -1120,11 +1007,7 @@ const SUPABASE_URL  = 'https://dnfxqvnnufvggxbiahzq.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZnhxdm5udWZ2Z2d4YmlhaHpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMjkwNTEsImV4cCI6MjA5NDYwNTA1MX0.4mI_JMBPJs2ZcmQTwPI-cncVtrH3x525_LxFNnBmflQ';
 const db = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-/* ─────────────────────────────────────────────────────────────────
- * ZIMBABWEAN UNIVERSITIES — preloaded options
- * Twelve real institutions with canonical campus print locations.
- * Edit/extend this object to add more; the UI cascades automatically.
- * ───────────────────────────────────────────────────────────────── */
+/* ── ZIMBABWEAN UNIVERSITIES (preloaded, cascade to kiosks) ── */
 const UNIVERSITIES = [
   { id: 'uz',    short: 'UZ',    name: 'University of Zimbabwe',                                    city: 'Harare',
     kiosks: ['Main Library (Mt Pleasant)', 'Faculty of Engineering', 'Faculty of Commerce', 'New Complex Hostel'] },
@@ -1152,7 +1035,6 @@ const UNIVERSITIES = [
     kiosks: ['Main Library', 'Student Centre'] },
 ];
 
-/* ── DOM helper ── */
 const $ = id => document.getElementById(id);
 
 /* ── Populate university dropdown ── */
@@ -1203,7 +1085,6 @@ let sides = 'Single sided', uploadedFile = null;
 let holdTimer = null, holdInterval = null;
 let holdFired = false;
 
-/* ── SUMMARY / RAIL SYNC ── */
 function updateSummary() {
   $('cost-note').textContent = copies + ' copies · ' + paperName + ' · ' + sides;
   if ($('rail-copies')) $('rail-copies').textContent = copies + ' copies';
@@ -1279,7 +1160,6 @@ function removeFile() {
 
 /* ── ERRORS / NAV ── */
 function showErr(id, show) { $(id).classList.toggle('is-visible', show); }
-
 function goStep(step) {
   if (step === 2) {
     if (!uniSelect.value || !kioskSelect.value || !uploadedFile) { showErr('err1', true); return; }
@@ -1292,7 +1172,7 @@ function goStep(step) {
     psEl.classList.toggle('is-done',   i < step);
   }
   for (let i = 1; i <= 2; i++) $('pl' + i).classList.toggle('is-done', i < step);
-  window.scrollTo({ top: $('app').offsetTop - 64, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /* ── SUPABASE SAVE ── */
@@ -1400,7 +1280,7 @@ async function checkout() {
     $('receipt-screen').classList.add('is-visible');
 
     if (navigator.vibrate) navigator.vibrate(12);
-    window.scrollTo({ top: $('app').offsetTop - 64, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch(e) {
     console.error('Checkout error:', e);
     alert(e.message || 'Something went wrong. Please try again.');
@@ -1436,15 +1316,13 @@ function resetApp() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-/* ── INTERSECTION OBSERVER for reveal animations ── */
-if ('IntersectionObserver' in window) {
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
-  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
-} else {
-  document.querySelectorAll('.reveal').forEach(el => el.classList.add('is-in'));
-}
+/* ── SERVICE CARDS — friendly "coming soon" toast on click ── */
+document.querySelectorAll('.service-card[data-status="soon"]').forEach(card => {
+  card.addEventListener('click', () => {
+    const title = card.querySelector('.service-card__title')?.textContent || 'This service';
+    alert(title + " is coming soon. We'll email you when it's ready.");
+  });
+});
 
 /* ── EXPOSE TO INLINE HTML ── */
 Object.assign(window, {
@@ -1456,7 +1334,6 @@ Object.assign(window, {
 /* ── BOOT ── */
 refreshKiosks();
 updateSummary();
-$('hero-count').textContent = String(UNIVERSITIES.length);
 </script>
 
 </body>
