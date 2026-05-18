@@ -5,46 +5,58 @@ institution's existing print-management system (PaperCut, Microsoft Universal Pr
 IPP, ezeep, Pharos).
 
 > ⚠️ **Status: pre-alpha.** Do NOT use with real student data, real payments, or real
-> institutional brands. See [SECURITY.md](SECURITY.md) for the full posture and the
-> remediation tracker from the 2026-05-16 Council of 5 review.
+> institutional brands. See [SECURITY.md](SECURITY.md) for the posture and the
+> remediation tracker.
 
 ## What's in the repo right now
 
-- `index.html` — single-page mobile checkout UI. Uses the **Supabase JS client** (CDN)
-  for persisting print jobs. Replace the two placeholder values near the top of the
-  `<script>` block (`SUPABASE_URL` and `SUPABASE_ANON`) with your project's values.
-- `supabase/migrations/001_print_jobs.sql` — run this in Supabase SQL Editor once to
-  create the `print_jobs` table, status-machine check constraints, indexes, and RLS
-  policies.
-- `api/send-email.js` — Vercel serverless function for Resend operator/student
-  notifications. Requires `RESEND_API_KEY`, `RESEND_FROM`, `OPERATOR_EMAIL`, and
-  `ALLOWED_ORIGINS` env vars. Returns `500 service_unavailable` if any are missing.
-- `firestore.rules` — deny-all safety lock for the old Firebase project.
-  **Deploy and then stop using that Firebase project entirely.**
-- `package.json` — minimal project metadata + `vercel dev / deploy` scripts.
-- `SECURITY.md` — vulnerability tracker + roadmap.
+- `index.html` — single-page mobile checkout UI + "other student services" grid
+  (history sync, kiosk directory, top-up requests, bulk handouts, scan info, past
+  papers placeholder). Uses the Supabase JS client (CDN, pinned version) for
+  persisting print jobs and for magic-link sign-in.
+- `supabase/migrations/001_print_jobs.sql` — schema for the `print_jobs` table, status-
+  machine check constraints, indexes, and base RLS policies.
+- `supabase/migrations/002_path_b_drop_payment.sql` — removes the payment columns
+  (Path B: institutions pay at the contract level, not students at submit time).
+- `supabase/migrations/003_auth_history.sql` — adds Supabase Auth + per-user RLS so
+  print history syncs across devices for signed-in users.
+- `api/send-email.js` — Vercel serverless function for Resend notifications. Verifies
+  the caller's Supabase JWT (when supplied), rate-limits per identity, dedupes by
+  job number, and never sends customer-confirmation mail to an unverified address.
+  Required env vars: `RESEND_API_KEY`, `RESEND_FROM`, `OPERATOR_EMAIL`,
+  `ALLOWED_ORIGINS`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`. See `.env.example`.
+- `vercel.json` — region pin (`fra1`), function `maxDuration`, security headers
+  (HSTS, CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy).
+- `package.json` — project metadata + `vercel dev / deploy` scripts.
+- `SECURITY.md` — vulnerability tracker and remediation roadmap.
 
-## First-time Supabase setup
+## First-time setup
 
-1. Create a free project at [supabase.com](https://supabase.com).
-2. Go to **SQL Editor → New query**, paste `supabase/migrations/001_print_jobs.sql`, and **Run**.
-3. Go to **Settings → API**, copy the **Project URL** and **anon public key**.
-4. Open `index.html`, find the two `// ← replace` lines near the top of the `<script>` block,
-   and paste in those values.
-5. Push to Vercel — no build step needed.
+1. **Supabase** — create a free project, then in **SQL Editor → New query** run each
+   migration in `supabase/migrations/` in order (001, 002, 003). Then go to
+   **Authentication → URL Configuration** and add your production origin to the
+   Redirect URLs allowlist (do NOT add wildcard preview domains in prod).
+2. **Resend** — create a sending domain, verify SPF/DKIM/DMARC, and generate an
+   API key scoped to that domain. Do not use `onboarding@resend.dev`.
+3. **Vercel env vars** — copy `.env.example` to `.env.local` for dev, and run
+   `vercel env add` for each variable in **Preview** and **Production** scopes.
+4. Update `CONFIG.SUPABASE_URL` and `CONFIG.SUPABASE_ANON` near the top of
+   `index.html` if you're forking to a different Supabase project. (These are the
+   anon-public key and project URL — safe to ship in the browser as long as RLS
+   stays enforced.)
 
 ## Local dev
 
 ```bash
-npm i -g vercel        # already installed in this dev env
-vercel link            # link the local folder to the Vercel project
-vercel env pull        # pull env vars from Vercel into .env.local
-npm run dev            # start vercel dev on http://localhost:3000
+npm i -g vercel
+vercel link            # link to your Vercel project
+vercel env pull        # pull env vars into .env.local
+npm run dev            # vercel dev on http://localhost:3000
 ```
 
 ## Deploy
 
 ```bash
 npm run deploy:preview   # preview deployment
-npm run deploy:prod      # production deployment (use Rolling Releases)
+npm run deploy:prod      # production (use Rolling Releases for canary)
 ```

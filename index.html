@@ -490,6 +490,27 @@ dialog.modal::backdrop {
 .kit-empty__title { font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -0.015em; color: var(--ink-1); margin-bottom: 6px; }
 .kit-empty__body { font-size: 13px; color: var(--ink-3); line-height: 1.55; max-width: 320px; margin: 0 auto; }
 
+.legal { font-size: 13.5px; color: var(--ink-2); line-height: 1.6; }
+.legal p { margin: 0 0 12px; }
+.legal .legal__h { font-family: var(--font-display); font-size: 14px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink-1); margin: 18px 0 6px; }
+.legal .legal__list { margin: 0 0 12px; padding-left: 20px; }
+.legal .legal__list li { margin-bottom: 8px; }
+.legal .legal__list li strong { color: var(--ink-1); }
+.legal .legal__contact { margin-top: 18px; font-size: 12.5px; color: var(--ink-3); }
+.legal a { color: var(--accent-deep); border-bottom: 1px dotted var(--accent); }
+
+.value-strip { background: linear-gradient(180deg, #e9f3ec 0%, #faf9f4 100%); border-bottom: 1px solid var(--paper-2); }
+.value-strip__inner { max-width: 980px; margin: 0 auto; padding: 12px 22px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.value-strip__pill { font-family: var(--font-mono, monospace); font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 10px; border-radius: var(--r-pill); background: var(--accent-deep, #0e4a26); color: #fff; flex-shrink: 0; }
+.value-strip__copy { font-size: 13px; color: var(--ink-2); line-height: 1.5; flex: 1 1 240px; min-width: 0; }
+.value-strip__copy strong { color: var(--ink-1); }
+.value-strip__link { font-size: 12.5px; color: var(--accent-deep); border-bottom: 1px dotted var(--accent); flex-shrink: 0; }
+@media print { .value-strip { display: none !important; } }
+
+.footer__links { display: inline-flex; gap: 8px; margin-left: 12px; align-items: center; }
+.footer__links a { color: var(--ink-3); border-bottom: 1px dotted var(--paper-3, #d6d3c5); }
+.footer__links a:hover { color: var(--accent-deep); }
+
 .kit-success { padding: 24px 12px; text-align: center; }
 .kit-success__icon { width: 56px; height: 56px; margin: 0 auto 16px; border-radius: var(--r-pill); background: var(--accent); color: var(--paper); display: inline-flex; align-items: center; justify-content: center; }
 .kit-success__title { font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -0.015em; color: var(--ink-1); margin-bottom: 6px; }
@@ -604,6 +625,14 @@ dialog.modal::backdrop {
     </ol>
   </div>
 </nav>
+
+<aside class="value-strip" aria-label="How CampusPrint works">
+  <div class="value-strip__inner">
+    <span class="value-strip__pill">Free for students</span>
+    <span class="value-strip__copy">Submit from your phone — your university covers the print cost. Collect at any kiosk within <strong>2 hours</strong>.</span>
+    <a href="#" class="value-strip__link" data-action="show-pricing">How is this free?</a>
+  </div>
+</aside>
 
 <div class="shell" id="top">
   <main class="form-col">
@@ -738,7 +767,8 @@ dialog.modal::backdrop {
         </span>
         <span class="tc__text">
           I confirm my print details are correct and agree to the
-          <a onclick="alert('Prints are non-refundable once submitted. Collect within 2 hours. CampusPrint is not liable for files incompatible with the printer.')" tabindex="0">Terms &amp; Conditions</a>.
+          <a href="#" role="button" data-action="show-terms" tabindex="0">Terms &amp; Conditions</a>
+          and <a href="#" role="button" data-action="show-privacy" tabindex="0">Privacy Notice</a>.
         </span>
       </label>
 
@@ -780,14 +810,14 @@ dialog.modal::backdrop {
           <div class="receipt-row"><span class="receipt-row__label">Copies</span><span class="receipt-row__value" id="r-copies"></span></div>
           <div class="receipt-row"><span class="receipt-row__label">Paper</span><span class="receipt-row__value" id="r-paper"></span></div>
           <div class="receipt-row"><span class="receipt-row__label">Sides</span><span class="receipt-row__value" id="r-sides"></span></div>
-          <div class="receipt-row"><span class="receipt-row__label">Status</span><span class="receipt-row__value receipt-row__value--ok"><svg class="icon-sm"><use href="#i-check-circle"/></svg> Sent to printer</span></div>
+          <div class="receipt-row"><span class="receipt-row__label">Status</span><span class="receipt-row__value receipt-row__value--ok"><svg class="icon-sm"><use href="#i-check-circle"/></svg> Received — kiosk will be notified</span></div>
           <div class="receipt-row"><span class="receipt-row__label">Email</span><span class="receipt-row__value" id="r-email"></span></div>
           <div class="receipt-row"><span class="receipt-row__label">Phone</span><span class="receipt-row__value" id="r-phone"></span></div>
           <div class="receipt-row"><span class="receipt-row__label">Collect</span><span class="receipt-row__value" id="r-printtime"></span></div>
         </div>
       </div>
       <div class="receipt__actions">
-        <button class="btn btn--primary" onclick="window.print()">Save / Print receipt</button>
+        <button class="btn btn--primary" type="button" data-action="print-receipt">Save / Print receipt</button>
         <button class="btn btn--ghost" onclick="App.resetApp()">Start new print job</button>
       </div>
     </section>
@@ -898,11 +928,18 @@ dialog.modal::backdrop {
   <div class="footer__inner">
     <span class="footer__brand">CampusPrint</span>
     <span>Collect within 2 hours · Pre-alpha · v0.1</span>
+    <span class="footer__links">
+      <a href="#" data-action="show-terms">Terms</a>
+      <span aria-hidden="true">·</span>
+      <a href="#" data-action="show-privacy">Privacy</a>
+      <span aria-hidden="true">·</span>
+      <a href="#" data-action="show-pricing">Pricing</a>
+    </span>
   </div>
 </footer>
 
 <script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 
 /* ════════════════════════════════════════════════════════════════
  *  CampusPrint — single-file app
@@ -914,10 +951,36 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const CONFIG = {
   SUPABASE_URL:  'https://dnfxqvnnufvggxbiahzq.supabase.co',
   SUPABASE_ANON: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZnhxdm5udWZ2Z2d4YmlhaHpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMjkwNTEsImV4cCI6MjA5NDYwNTA1MX0.4mI_JMBPJs2ZcmQTwPI-cncVtrH3x525_LxFNnBmflQ',
+  // Canonical production origin for magic-link redirects. Kept off the
+  // `*-kuda3333.vercel.app` wildcard so a preview URL can't capture a
+  // session token after a phishing-style sign-in initiation.
+  CANONICAL_ORIGIN: 'https://campusprint.vercel.app',
+  // Email-domain allowlist for sign-in (client check; server-side is
+  // enforced via a Supabase Auth Hook — see SECURITY.md).
+  EMAIL_ALLOW: ['.ac.zw', '.edu.zw', '.uz.ac.zw', '.nust.ac.zw', '.msu.ac.zw',
+                '.africau.edu', '.cut.ac.zw', '.buse.ac.zw', '.gzu.ac.zw',
+                '.lsu.ac.zw', '.hit.ac.zw', '.cuz.ac.zw', '.zou.ac.zw', '.solusi.ac.zw'],
   COLLECT_WINDOW_MS: 7200000,  // 2 hours
   HISTORY_LIMIT: 50,
   FILE_MAX_MB: 50,
 };
+
+function magicLinkRedirect() {
+  // Use canonical origin in production; fall back to current origin for
+  // localhost / vercel preview when running outside production.
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('-kuda3333.vercel.app')) {
+    return window.location.origin + window.location.pathname;
+  }
+  return CONFIG.CANONICAL_ORIGIN + '/';
+}
+
+function isAllowedSignInEmail(email) {
+  if (typeof email !== 'string') return false;
+  const lower = email.toLowerCase().trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lower)) return false;
+  return CONFIG.EMAIL_ALLOW.some(suffix => lower.endsWith(suffix));
+}
 const STORAGE_KEYS = { jobs: 'campusprint:jobs', requests: 'campusprint:requests' };
 
 const db = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON);
@@ -1026,9 +1089,12 @@ const Auth = {
   },
 
   async sendMagicLink(email) {
+    if (!isAllowedSignInEmail(email)) {
+      return { error: { message: 'Please use your university email (e.g. you@students.uz.ac.zw).' } };
+    }
     return db.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: window.location.origin + window.location.pathname },
+      options: { emailRedirectTo: magicLinkRedirect() },
     });
   },
 
@@ -1286,22 +1352,20 @@ const App = {
         submittedAt: fullDT,
       });
 
-      // Best-effort email notification (don't block UI on this)
-      fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'print_job',
-          data: {
-            jobNum: data.jobNum,
-            location: `${uniName} — ${kiosk}`,
-            studentId: data.studentId,
-            email: data.email, phone: data.phone,
-            copies: data.copies, paper: data.paper, sides: data.sides,
-            fileName: data.fileName,
-            collectBy: data.collectBy,
-          },
-        }),
+      // Best-effort email notification (don't block UI on this).
+      // If signed in, attach the Supabase access token so the server can
+      // verify identity and send a confirmation to the verified address.
+      postSendEmail({
+        type: 'print_job',
+        data: {
+          jobNum: data.jobNum,
+          location: `${uniName} — ${kiosk}`,
+          studentId: data.studentId,
+          email: data.email, phone: data.phone,
+          copies: data.copies, paper: data.paper, sides: data.sides,
+          fileName: data.fileName,
+          collectBy: data.collectBy,
+        },
       }).catch(e => console.warn('Email notification failed:', e));
 
       // Render receipt
@@ -1366,6 +1430,20 @@ const App = {
   },
 };
 window.App = App;
+
+/* ─── /api/send-email helper (attaches JWT when signed in) ──── */
+async function postSendEmail(payload) {
+  const headers = { 'Content-Type': 'application/json' };
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+  } catch { /* no session is fine — request goes anonymous */ }
+  return fetch('/api/send-email', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+}
 
 /* ─── SUPABASE SAVE ──────────────────────────────────────────── */
 async function saveJobRemote(data) {
@@ -1643,6 +1721,68 @@ const Services = {
     Modal.open('Scan to email — how it works', html);
   },
 
+  /* How pricing works (Path B — institution-paid) */
+  pricing() {
+    Modal.open('How CampusPrint pricing works', `
+      <div class="legal">
+        <p><strong>You don't pay per print.</strong> CampusPrint is licensed per-seat by your university or institution — they cover the cost of pages, paper, toner, and maintenance under their existing print-management contract.</p>
+        <h4 class="legal__h">What this means for you</h4>
+        <ul class="legal__list">
+          <li>No card details, no mobile-money prompt, no top-up at submit time.</li>
+          <li>Submit from anywhere, collect at any kiosk on your campus.</li>
+          <li>Fair-use quotas (pages per semester) are set by your institution. If you've hit your quota, use the <a href="#" data-action="open-topup">Top up print credit</a> request to ask your bursary for more.</li>
+        </ul>
+        <h4 class="legal__h">For institutions</h4>
+        <p>CampusPrint sits on top of your existing print server (PaperCut, Microsoft Universal Print, IPP, Pharos, ezeep). One per-seat subscription replaces the kiosk-card hardware, the cash-handling, and the queue. Contact <a href="mailto:partnerships@campusprint.zw">partnerships@campusprint.zw</a>.</p>
+      </div>`);
+  },
+
+  /* Terms & Conditions — proper modal, not alert() */
+  terms() {
+    Modal.open('Terms &amp; Conditions', `
+      <div class="legal">
+        <p>By submitting a print request you agree to the following:</p>
+        <ol class="legal__list">
+          <li><strong>Non-refundable.</strong> Prints are non-refundable once submitted. Review your file, page count, paper type, and sides before submitting.</li>
+          <li><strong>Collection window.</strong> Prints must be collected from the chosen kiosk within <strong>2 hours</strong> of submission. Uncollected jobs may be discarded.</li>
+          <li><strong>File compatibility.</strong> CampusPrint is not liable for files that fail to render correctly on the kiosk printer (corrupt PDFs, unsupported fonts, oversized images, etc.). Test prints are available at every kiosk.</li>
+          <li><strong>Content responsibility.</strong> You are responsible for the legality and copyright status of the documents you submit. Do not submit material you do not have the right to print.</li>
+          <li><strong>Service availability.</strong> Kiosks are subject to consumable stock (paper, toner) and may be temporarily unavailable. Where a kiosk cannot fulfil a job, CampusPrint will reverse any associated charge through your institution's billing arrangement.</li>
+          <li><strong>Pre-alpha.</strong> CampusPrint is currently in pre-alpha and is offered without warranty. See the open-source repository for the current security and reliability posture.</li>
+        </ol>
+        <p class="legal__contact">Questions? <a href="mailto:hello@campusprint.zw">hello@campusprint.zw</a></p>
+      </div>`);
+  },
+
+  /* Privacy Notice — Zimbabwe Data Protection Act 2021 */
+  privacy() {
+    Modal.open('Privacy Notice', `
+      <div class="legal">
+        <p>This notice explains how CampusPrint collects and uses your personal information, in line with Zimbabwe's <em>Data Protection Act [Chapter 11:12]</em> of 2021.</p>
+        <h4 class="legal__h">What we collect</h4>
+        <ul class="legal__list">
+          <li>Your student ID, email address, and phone number, only when you submit a print job, top-up request, or bulk handout request.</li>
+          <li>The file you upload (name and contents) — used solely to render the printed output at the chosen kiosk.</li>
+          <li>Job metadata: which university, kiosk, copy count, paper type, and timestamp.</li>
+        </ul>
+        <h4 class="legal__h">How we use it</h4>
+        <ul class="legal__list">
+          <li>To produce your prints at the kiosk you select.</li>
+          <li>To send job-confirmation emails to your verified address (signed-in users only).</li>
+          <li>To notify campus print operations of incoming jobs.</li>
+          <li>To show you your own print history (signed-in users; visible only to you).</li>
+        </ul>
+        <h4 class="legal__h">Lawful basis</h4>
+        <p>Performance of the service you requested. We do not sell your data, do not use it for advertising, and do not share it with third parties beyond the institution operating the kiosk you submitted to.</p>
+        <h4 class="legal__h">Retention</h4>
+        <p>Print-job metadata is retained for 90 days for support and dispute resolution, then deleted. Uploaded files are not retained after the print is released.</p>
+        <h4 class="legal__h">Your rights</h4>
+        <p>You may request a copy of, correction of, or deletion of your data at any time by emailing <a href="mailto:privacy@campusprint.zw">privacy@campusprint.zw</a>. We will respond within 30 days.</p>
+        <h4 class="legal__h">Sub-processors</h4>
+        <p>Supabase (database + auth), Resend (transactional email), Vercel (hosting). These are international processors; data may transit outside Zimbabwe under appropriate safeguards.</p>
+      </div>`);
+  },
+
   /* Past papers — coming soon */
   papers() {
     const html = `
@@ -1729,11 +1869,7 @@ document.addEventListener('submit', async e => {
   Storage.addRequest({ kind, data: payload.data });
 
   try {
-    const res = await fetch('/api/send-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    const res = await postSendEmail(payload);
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       throw new Error(body.error || `HTTP ${res.status}`);
@@ -1776,7 +1912,18 @@ document.addEventListener('click', e => {
     return;
   }
   if (e.target.closest('[data-action="sign-out"]')) {
-    Auth.signOut();
+    Auth.signOut(); return;
+  }
+  const tcLink = e.target.closest('[data-action="show-terms"]');
+  if (tcLink) { e.preventDefault(); Services.terms(); return; }
+  const pvLink = e.target.closest('[data-action="show-privacy"]');
+  if (pvLink) { e.preventDefault(); Services.privacy(); return; }
+  const prLink = e.target.closest('[data-action="show-pricing"]');
+  if (prLink) { e.preventDefault(); Services.pricing(); return; }
+  const topupLink = e.target.closest('[data-action="open-topup"]');
+  if (topupLink) { e.preventDefault(); Modal.close(); Services.topup(); return; }
+  if (e.target.closest('[data-action="print-receipt"]')) {
+    window.print();
   }
 });
 

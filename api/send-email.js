@@ -11,6 +11,96 @@
 // generic error responses; refuse Resend's onboarding@resend.dev sender).
 
 const MAX_FIELD_LEN = 400;
+const AUTH_VERIFY_TIMEOUT_MS = 4000;
+const RESEND_TIMEOUT_MS = 8000;
+
+/* ─── rate limit + idempotency (in-memory; per warm instance) ───
+ * Fluid Compute reuses instances across concurrent requests, so a Map
+ * here gives real throttling for the common case. Cross-instance
+ * limiting is a P1 hardening item (move to Upstash / Vercel KV). */
+const RL_WINDOW_MS  = 60_000;
+const RL_MAX_HITS   = 10;        // per identity, per minute
+const IDEMP_TTL_MS  = 10 * 60_000;
+const _rlMap   = new Map(); // key -> [timestamps]
+const _idemMap = new Map(); // key -> { at, response }
+
+function _purgeRl(arr, now) {
+  while (arr.length && arr[0] < now - RL_WINDOW_MS) arr.shift();
+}
+function rateLimitHit(key) {
+  const now = Date.now();
+  const arr = _rlMap.get(key) || [];
+  _purgeRl(arr, now);
+  arr.push(now);
+  _rlMap.set(key, arr);
+  // opportunistic GC: cap map size
+  if (_rlMap.size > 5000) {
+    for (const k of _rlMap.keys()) { _rlMap.delete(k); if (_rlMap.size <= 2500) break; }
+  }
+  return arr.length > RL_MAX_HITS;
+}
+function clientIp(req) {
+  const xf = req.headers['x-forwarded-for'];
+  if (typeof xf === 'string' && xf.length) return xf.split(',')[0].trim();
+  return req.socket?.remoteAddress || 'unknown';
+}
+function idempotencyHit(key) {
+  if (!key) return null;
+  const now = Date.now();
+  const entry = _idemMap.get(key);
+  if (entry && now - entry.at < IDEMP_TTL_MS) return entry.response;
+  // opportunistic GC
+  if (_idemMap.size > 5000) {
+    for (const [k, v] of _idemMap) if (now - v.at > IDEMP_TTL_MS) _idemMap.delete(k);
+  }
+  return null;
+}
+function idempotencyStore(key, response) {
+  if (!key) return;
+  _idemMap.set(key, { at: Date.now(), response });
+}
+function payloadFingerprint(type, data) {
+  // Stable order-independent fingerprint for dedupe of top-up / bulk.
+  const keys = Object.keys(data || {}).sort();
+  const flat = keys.map(k => `${k}=${String(data[k]).slice(0, 80)}`).join('|');
+  return `${type}:${flat}`;
+}
+
+/* ─── auth ──────────────────────────────────────────────────────── */
+// Verifies a Supabase access token by calling /auth/v1/user. Returns the
+// verified email on success, or null if the request is unauthenticated /
+// the token is invalid / Supabase is unreachable. Never throws.
+async function verifySupabaseToken(req) {
+  const header = req.headers.authorization || req.headers.Authorization;
+  if (!header || !header.startsWith('Bearer ')) return null;
+  const token = header.slice(7).trim();
+  if (!token) return null;
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseAnon = process.env.SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnon) {
+    console.error('auth verify skipped: SUPABASE_URL / SUPABASE_ANON_KEY missing');
+    return null;
+  }
+
+  try {
+    const r = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'apikey': supabaseAnon,
+      },
+      signal: AbortSignal.timeout(AUTH_VERIFY_TIMEOUT_MS),
+    });
+    if (!r.ok) return null;
+    const user = await r.json();
+    if (!user || typeof user.email !== 'string' || !looksLikeEmail(user.email)) return null;
+    return { id: user.id, email: user.email };
+  } catch (err) {
+    console.warn('auth verify error:', err && err.message);
+    return null;
+  }
+}
 
 /* ─── helpers ───────────────────────────────────────────────────── */
 function escapeHtml(value) {
@@ -160,7 +250,7 @@ module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   }
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST')    return res.status(405).json({ error: 'method_not_allowed' });
@@ -177,6 +267,22 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'service_misconfigured' });
   }
 
+  // Optional auth: when a valid Supabase JWT is supplied, we trust the
+  // verified email; otherwise we still accept the submission (operator
+  // email only) but we never send a customer-confirmation to an
+  // unverified address. This eliminates the spoof / email-bomb surface
+  // where an attacker could forge "your job is confirmed" emails from
+  // our verified Resend domain to arbitrary victims.
+  const verified = await verifySupabaseToken(req);
+
+  // Rate limit BEFORE any expensive work. Bucket by verified email if we
+  // have one (cheap to roll IPs), otherwise by IP.
+  const rlKey = verified ? `u:${verified.email}` : `ip:${clientIp(req)}`;
+  if (rateLimitHit(rlKey)) {
+    res.setHeader('Retry-After', '60');
+    return res.status(429).json({ error: 'rate_limited' });
+  }
+
   const { type, data } = req.body || {};
 
   /* Per-type validation + email body assembly */
@@ -186,39 +292,49 @@ module.exports = async function handler(req, res) {
     const err = validatePrintJob(data);
     if (err) { console.warn('print_job validation:', err); return res.status(400).json({ error: 'invalid_payload' }); }
     const e = escapeAll(data, ['jobNum','location','studentId','fileName','copies','paper','sides','email','phone','collectBy']);
-    operatorSubject = `New Print Job ${e.jobNum} — ${e.location}`;
+    operatorSubject = `New Print Job ${e.jobNum} — ${e.location}${verified ? ' ✓' : ''}`;
     operatorBody    = bodyPrintJob(e);
     customerSubject = `Your CampusPrint Job is Confirmed — ${e.jobNum}`;
     customerBody    = bodyPrintJobCustomer(e);
-    customerEmail   = looksLikeEmail(data.email) ? data.email : null;
+    customerEmail   = verified ? verified.email : null;
 
   } else if (type === 'topup_request') {
     const err = validateTopUp(data);
     if (err) { console.warn('topup_request validation:', err); return res.status(400).json({ error: 'invalid_payload' }); }
     const e = escapeAll(data, ['amount','studentId','email','reason']);
-    operatorSubject = `Top-up Request — ${e.amount} pages — ${e.studentId}`;
+    operatorSubject = `Top-up Request — ${e.amount} pages — ${e.studentId}${verified ? ' ✓' : ''}`;
     operatorBody    = bodyTopUp(e);
     customerSubject = `CampusPrint: Top-up request received`;
     customerBody    = SHELL_OPEN +
       `<p style="color:#999;font-size:11px;margin:0;font-family:monospace">We've received your top-up request</p></div>
       <p style="font-size:14px;color:#1d211b;line-height:1.55">Hi there — your request for <strong>${e.amount} additional pages</strong> has been sent to your institution's bursary office. You'll receive a confirmation within 24 hours.</p>` + SHELL_CLOSE;
-    customerEmail   = data.email;
+    customerEmail   = verified ? verified.email : null;
 
   } else if (type === 'bulk_request') {
     const err = validateBulk(data);
     if (err) { console.warn('bulk_request validation:', err); return res.status(400).json({ error: 'invalid_payload' }); }
     const e = escapeAll(data, ['lecturerId','courseCode','copies','finishing','deliver','email']);
-    operatorSubject = `Bulk Handout — ${e.courseCode} — ${e.copies} copies`;
+    operatorSubject = `Bulk Handout — ${e.courseCode} — ${e.copies} copies${verified ? ' ✓' : ''}`;
     operatorBody    = bodyBulk(e);
     customerSubject = `CampusPrint: Bulk handout request received`;
     customerBody    = SHELL_OPEN +
       `<p style="color:#999;font-size:11px;margin:0;font-family:monospace">We've received your bulk handout request</p></div>
       <p style="font-size:14px;color:#1d211b;line-height:1.55">Thanks — your request for <strong>${e.copies} copies</strong> of <strong>${e.courseCode}</strong> with <strong>${e.finishing}</strong>, delivered to <strong>${e.deliver}</strong>, is queued. Operations will confirm by email before the deadline.</p>` + SHELL_CLOSE;
-    customerEmail   = data.email;
+    customerEmail   = verified ? verified.email : null;
 
   } else {
     return res.status(400).json({ error: 'unsupported_type' });
   }
+
+  /* Idempotency: replay the prior response for a recent duplicate.
+   * print_job dedupes on the client-generated jobNum (crypto-random,
+   * collision-resistant). Other types dedupe on a payload fingerprint
+   * scoped to the caller (verified email or IP). */
+  const idemKey = type === 'print_job'
+    ? `print_job:${data.jobNum}`
+    : `${rlKey}:${payloadFingerprint(type, data)}`;
+  const replay = idempotencyHit(idemKey);
+  if (replay) return res.status(200).json(replay);
 
   /* Send */
   try {
@@ -229,6 +345,7 @@ module.exports = async function handler(req, res) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ from: RESEND_FROM, to: [to], subject, html }),
+      signal: AbortSignal.timeout(RESEND_TIMEOUT_MS),
     });
 
     const operatorRes = await sendOne(OPERATOR_EMAIL, operatorSubject, operatorBody);
@@ -246,9 +363,12 @@ module.exports = async function handler(req, res) {
     }
 
     const result = await operatorRes.json();
-    return res.status(200).json({ success: true, id: result.id });
+    const response = { success: true, id: result.id };
+    idempotencyStore(idemKey, response);
+    return res.status(200).json(response);
   } catch (err) {
+    const isTimeout = err && (err.name === 'TimeoutError' || err.name === 'AbortError');
     console.error('email handler error:', err);
-    return res.status(500).json({ error: 'internal_error' });
+    return res.status(isTimeout ? 504 : 500).json({ error: isTimeout ? 'upstream_timeout' : 'internal_error' });
   }
 };
