@@ -108,15 +108,15 @@ svg { display: block; }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink-1); }
 .brand__logo {
   display: block;
-  /* The logo PNG is a 2×2 panel sheet. background-size:200% auto scales it so
-     the image is twice the container width, showing only the left half = the
-     horizontal lockup panel. background-position shifts up to centre on the mark. */
+  /* Logo PNG: 1408×768, 2×2 panel sheet. Left panel = horizontal lockup.
+     155% keeps the full wordmark within the 160px container (content ≈148px).
+     Y offset centres on the lockup within the top-half panel row. */
   width: 160px;
   height: 32px;
   background-image: url(assets/img/logo.png);
   background-repeat: no-repeat;
-  background-size: 200% auto;
-  background-position: 0 -22px;
+  background-size: 155% auto;
+  background-position: 0 -18px;
 }
 .brand__tag { font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.14em; color: var(--ink-4); text-transform: uppercase; }
 .app-header__right { display: flex; align-items: center; gap: 8px; }
