@@ -101,9 +101,38 @@ The function will return `500 service_unavailable` until these are set in Vercel
 | V6 | HIGH | Student ID is a free-text field — impersonation by design | Federated SSO (Entra ID / Google / SAML); magic-link is the interim path with domain allowlist |
 | V18 | MED | In-memory rate limit is per warm instance only — can be evaded across cold starts | Move to Upstash Redis / Vercel KV with `@upstash/ratelimit` |
 | V19 | MED | Server-side email-domain allowlist not yet enforced (client-side check only) | Add Supabase Auth Hook (`before_user_created`) that rejects non-allowlisted domains |
-| V20 | MED | No observability — `console.error` only, 7-day retention on Vercel Hobby | Sentry + Axiom; structured JSON logs with request IDs |
-| V21 | MED | No SPF/DKIM/DMARC verification in repo for `RESEND_FROM` domain | Document required DNS records; add a Resend bounce webhook |
+| V20 | MED | ~~No observability — `console.error` only~~ | ✅ Structured JSON logs + `requestId` per request + optional Sentry (`SENTRY_DSN` env var) landed 2026-05-19 |
+| V21 | MED | ~~No Resend bounce webhook~~ | ✅ `/api/webhook-resend.js` with Svix signature verification landed 2026-05-19. **Action:** add endpoint in Resend dashboard + set `RESEND_WEBHOOK_SECRET` env var |
 | V22 | LOW | CSP still allows `'unsafe-inline'` for scripts (inline `onclick` handlers + module script) | Extract inline handlers, switch to nonce-based CSP |
+
+## Infrastructure checklist (manual — requires dashboard access)
+
+### Supabase PITR backups
+Point-in-Time Recovery requires the **Pro plan** (≥ $25/mo). Once upgraded:
+
+1. Supabase dashboard → **Project Settings → Database → Backups**
+2. Enable **Point-in-Time Recovery** — retains WAL for 7 days by default.
+3. Test a restore to a staging branch (`supabase db reset --linked`) before going live.
+
+Until then, take a manual snapshot before every destructive migration:
+```
+supabase db dump -f backup_$(date +%Y%m%d).sql
+```
+
+### Uptime monitoring
+`GET /api/health` returns `{"status":"ok","ts":"...","version":"<git-sha>","region":"..."}`.
+
+Recommended free monitor: **UptimeRobot** (uptimerobot.com)
+1. New monitor → **HTTP(S)** → URL: `https://campusprint-pi.vercel.app/api/health`
+2. Monitoring interval: **5 minutes**
+3. Alert contact: ops email + WhatsApp webhook
+4. Keyword check: `"status":"ok"` — alerts if the body changes (e.g. 500 with error JSON)
+
+### Migration CI
+`.github/workflows/migration-check.yml` runs on every PR that touches `supabase/migrations/`:
+- Validates sequential file numbering
+- Flags `DROP TABLE` / `TRUNCATE` / `DELETE FROM` with a warning
+- Fails the build if a destructive migration has no ROLLBACK comment
 
 ## P1 + P2
 

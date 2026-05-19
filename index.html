@@ -218,6 +218,11 @@ svg { display: block; }
 .field:first-of-type { margin-top: 0; }
 .field__label { display: block; font-size: 13px; font-weight: 500; color: var(--ink-2); margin-bottom: 8px; letter-spacing: 0.005em; }
 .field__hint { font-size: 12px; color: var(--ink-4); margin-top: 6px; line-height: 1.5; }
+.field__error { font-size: 12px; color: var(--danger); margin-top: 5px; display: none; align-items: center; gap: 5px; line-height: 1.4; }
+.field__error.is-visible { display: flex; }
+.field__error svg { flex-shrink: 0; }
+.input.is-invalid { border-color: var(--danger); background: var(--danger-tint); }
+.input.is-invalid:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 18%, transparent); }
 
 .input, .select, .textarea {
   width: 100%;
@@ -766,15 +771,30 @@ dialog.modal::backdrop {
 
       <div class="field">
         <label class="field__label" for="student-id">Student ID</label>
-        <input id="student-id" class="input" type="text" placeholder="e.g. R123456Y" autocomplete="off">
+        <input id="student-id" class="input" type="text" placeholder="e.g. R123456Y" autocomplete="off"
+          aria-describedby="err-sid" onblur="Validate.field('sid')">
+        <div id="err-sid" class="field__error" role="alert" aria-live="polite">
+          <svg class="icon-sm"><use href="#i-alert"/></svg>
+          <span>Enter your student ID (e.g. R123456Y — at least 3 characters).</span>
+        </div>
       </div>
       <div class="field">
         <label class="field__label" for="email">Email address</label>
-        <input id="email" class="input" type="email" placeholder="you@students.uz.ac.zw" autocomplete="email" inputmode="email">
+        <input id="email" class="input" type="email" placeholder="you@students.uz.ac.zw" autocomplete="email" inputmode="email"
+          aria-describedby="err-email" onblur="Validate.field('email')">
+        <div id="err-email" class="field__error" role="alert" aria-live="polite">
+          <svg class="icon-sm"><use href="#i-alert"/></svg>
+          <span id="err-email-msg">Enter a valid university email address (.ac.zw or .edu.zw).</span>
+        </div>
       </div>
       <div class="field">
         <label class="field__label" for="phone">Phone number</label>
-        <input id="phone" class="input" type="tel" placeholder="07X XXX XXXX" autocomplete="tel" inputmode="tel">
+        <input id="phone" class="input" type="tel" placeholder="07X XXX XXXX" autocomplete="tel" inputmode="tel"
+          aria-describedby="err-phone" onblur="Validate.field('phone')">
+        <div id="err-phone" class="field__error" role="alert" aria-live="polite">
+          <svg class="icon-sm"><use href="#i-alert"/></svg>
+          <span>Enter a valid Zimbabwean number (e.g. 077 123 4567 or +263 77 123 4567).</span>
+        </div>
       </div>
 
       <label class="tc">
@@ -983,6 +1003,8 @@ const CONFIG = {
   COLLECT_WINDOW_MS: 7200000,  // 2 hours
   HISTORY_LIMIT: 50,
   FILE_MAX_MB: 50,
+  SUPPORT_WHATSAPP: '+263771234567', // replace with real ops number
+  MAGIC_LINK_COOLDOWN_MS: 60000,
 };
 
 function magicLinkRedirect() {
@@ -1335,8 +1357,12 @@ const App = {
     const sid = dom.studentId.value.trim();
     const em  = dom.email.value;
     const ph  = dom.phone.value;
-    if (!sid || !em.includes('@') || ph.length < 9 || !dom.tcCheck.checked) {
-      UI.showErr('err2', true); return;
+    const fieldsOk = Validate.step2();
+    if (!fieldsOk || !dom.tcCheck.checked) {
+      if (!dom.tcCheck.checked) UI.showErr('err2', true);
+      else UI.showErr('err2', false);
+      if (!fieldsOk) return;
+      if (!dom.tcCheck.checked) return;
     }
     UI.showErr('err2', false);
 
@@ -1542,6 +1568,81 @@ const Modal = (() => {
 /* ────────────────────────────────────────────────────────────────
  *  SERVICES — five live + one coming-soon
  * ─────────────────────────────────────────────────────────────── */
+/* ─── MAGIC-LINK STATE ───────────────────────────────────────── */
+let _mlCooldownUntil = 0;
+let _mlCountdownTimer = null;
+
+function startMlCooldown(email) {
+  _mlCooldownUntil = Date.now() + CONFIG.MAGIC_LINK_COOLDOWN_MS;
+  if (_mlCountdownTimer) clearInterval(_mlCountdownTimer);
+
+  function render() {
+    const remaining = Math.max(0, Math.ceil((_mlCooldownUntil - Date.now()) / 1000));
+    const btn = document.getElementById('ml-resend-btn');
+    const countdown = document.getElementById('ml-countdown');
+    if (!btn || !countdown) { clearInterval(_mlCountdownTimer); return; }
+    if (remaining > 0) {
+      btn.disabled = true;
+      countdown.textContent = `Resend in ${remaining}s`;
+    } else {
+      btn.disabled = false;
+      countdown.textContent = '';
+      clearInterval(_mlCountdownTimer);
+    }
+  }
+
+  render();
+  _mlCountdownTimer = setInterval(render, 1000);
+}
+
+/* ─── PER-FIELD VALIDATION ───────────────────────────────────── */
+const Validate = {
+  _set(inputEl, errEl, bad, msgOverride) {
+    inputEl.classList.toggle('is-invalid', bad);
+    errEl.classList.toggle('is-visible', bad);
+    if (msgOverride) errEl.querySelector('span').textContent = msgOverride;
+    inputEl.setAttribute('aria-invalid', bad ? 'true' : 'false');
+    return !bad;
+  },
+  field(name) {
+    if (name === 'sid') {
+      const el = $('student-id');
+      const v = el.value.trim();
+      return this._set(el, $('err-sid'), v.length < 3 || v.length > 30);
+    }
+    if (name === 'email') {
+      const el = $('email');
+      const v = el.value.trim();
+      const errMsg = $('err-email-msg');
+      const bad = !v.includes('@') || v.length < 6;
+      const domainOk = !bad && CONFIG.EMAIL_ALLOW.some(d => v.toLowerCase().endsWith(d));
+      if (!bad && !domainOk) {
+        return this._set(el, $('err-email'), true, 'Use your institution email (.ac.zw or .edu.zw).');
+      }
+      return this._set(el, $('err-email'), bad, 'Enter a valid email address.');
+    }
+    if (name === 'phone') {
+      const el = $('phone');
+      const v = el.value.replace(/\s/g, '');
+      const ok = v.length >= 9 && /^(\+?263|0)7\d/.test(v);
+      return this._set(el, $('err-phone'), !ok);
+    }
+    return true;
+  },
+  step2() {
+    const a = this.field('sid');
+    const b = this.field('email');
+    const c = this.field('phone');
+    return a && b && c;
+  },
+  clear(name) {
+    const map = { sid: ['student-id','err-sid'], email: ['email','err-email'], phone: ['phone','err-phone'] };
+    const [inputId, errId] = map[name] || [];
+    if (inputId) { $(inputId).classList.remove('is-invalid'); $(inputId).removeAttribute('aria-invalid'); }
+    if (errId)   $(errId).classList.remove('is-visible');
+  },
+};
+
 const Services = {
   /* Sign in — magic link */
   signin() {
@@ -1849,15 +1950,34 @@ document.addEventListener('submit', async e => {
           <div class="kit-empty__icon" style="background:var(--danger-tint);color:var(--danger)"><svg class="icon"><use href="#i-alert"/></svg></div>
           <div class="kit-empty__title">Couldn't send the link</div>
           <p class="kit-empty__body">${esc(error.message || 'Try again in a moment.')}</p>
+          <button class="btn btn--ghost" data-action="sign-in" type="button" style="max-width:240px;margin:0 auto">Try again</button>
         </div>`);
       return;
     }
+    startMlCooldown(email);
+    const waNumber = CONFIG.SUPPORT_WHATSAPP.replace(/\D/g, '');
+    const waMsg = encodeURIComponent(`Hi CampusPrint — my magic link to ${email} didn't arrive. Can you help?`);
     Modal.setBody(`
       <div class="kit-success">
         <div class="kit-success__icon"><svg class="icon"><use href="#i-check"/></svg></div>
         <div class="kit-success__title">Check your inbox</div>
-        <p class="kit-success__body">We sent a magic link to <strong>${esc(email)}</strong>. Click it to sign in — this tab will pick up the session automatically.</p>
-        <button class="btn btn--ghost" data-modal-close type="button" style="max-width:240px;margin:0 auto">Close</button>
+        <p class="kit-success__body">We sent a magic link to <strong>${esc(email)}</strong>. Click it to sign in — this tab will update automatically.</p>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+          <button id="ml-resend-btn" class="btn btn--ghost" type="button" disabled
+            style="max-width:280px;margin:0 auto"
+            onclick="(async()=>{
+              const {error}=await Auth.sendMagicLink('${esc(email).replace(/'/g,"\\'")}');
+              if(!error){startMlCooldown('${esc(email).replace(/'/g,"\\'")}');}
+            })()">
+            Resend magic link &nbsp;<span id="ml-countdown" style="font-family:var(--font-mono);font-size:11px;color:var(--ink-4)"></span>
+          </button>
+          <a href="https://wa.me/${waNumber}?text=${waMsg}" target="_blank" rel="noopener"
+            style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;color:var(--accent-deep);text-decoration:none;padding:8px 0">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.122.554 4.118 1.522 5.85L.057 23.007a.5.5 0 0 0 .614.629l5.31-1.393A11.955 11.955 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.956 9.956 0 0 1-5.033-1.362l-.36-.214-3.733.979.997-3.645-.235-.374A9.952 9.952 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+            Didn't get it? Message us on WhatsApp
+          </a>
+          <button class="btn btn--ghost" data-modal-close type="button" style="max-width:280px;margin:0 auto">Close</button>
+        </div>
       </div>`);
     return;
   }

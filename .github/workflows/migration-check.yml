@@ -1,0 +1,57 @@
+name: Migration check
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+  push:
+    branches: [agent-link-on-campusprints-0499]
+    paths:
+      - 'supabase/migrations/**'
+
+jobs:
+  lint:
+    name: Validate SQL migrations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check sequential numbering
+        run: |
+          prev=0
+          for f in $(ls supabase/migrations/*.sql 2>/dev/null | sort); do
+            num=$(basename "$f" | grep -oE '^[0-9]+' || true)
+            if [ -z "$num" ]; then
+              echo "::error file=$f::Migration filename must start with a number (e.g. 004_description.sql)"
+              exit 1
+            fi
+            if [ "$num" -le "$prev" ]; then
+              echo "::error file=$f::Migration $num is out of sequence (previous was $prev)"
+              exit 1
+            fi
+            prev=$num
+          done
+          echo "Migration sequence OK (highest: $prev)"
+
+      - name: Flag destructive operations
+        run: |
+          found=0
+          for f in $(ls supabase/migrations/*.sql 2>/dev/null | sort); do
+            if grep -inE '^\s*(drop table|truncate|delete from)' "$f"; then
+              echo "::warning file=$f::Contains DROP TABLE / TRUNCATE / DELETE — confirm the migration header documents data-loss expectations and a rollback plan."
+              found=1
+            fi
+          done
+          if [ "$found" -eq 0 ]; then echo "No unguarded destructive operations found."; fi
+
+      - name: Confirm destructive migrations have rollback comments
+        run: |
+          for f in $(ls supabase/migrations/*.sql 2>/dev/null | sort); do
+            if grep -inE '^\s*(drop table|truncate|delete from)' "$f" > /dev/null 2>&1; then
+              if ! grep -i 'rollback\|restore\|undo\|revert' "$f" > /dev/null 2>&1; then
+                echo "::error file=$f::Destructive migration is missing a ROLLBACK comment. Add one before merging."
+                exit 1
+              fi
+            fi
+          done
+          echo "Rollback comment check passed."

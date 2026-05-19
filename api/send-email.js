@@ -10,9 +10,50 @@
 // field; lock CORS to ALLOWED_ORIGINS; strict schema validation per type;
 // generic error responses; refuse Resend's onboarding@resend.dev sender).
 
+const crypto = require('crypto');
+
 const MAX_FIELD_LEN = 400;
 const AUTH_VERIFY_TIMEOUT_MS = 4000;
 const RESEND_TIMEOUT_MS = 8000;
+
+/* ─── structured logger ─────────────────────────────────────────── */
+function makeLogger(requestId) {
+  return function log(level, event, ctx = {}) {
+    const entry = JSON.stringify({ ts: new Date().toISOString(), level, event, requestId, ...ctx });
+    if (level === 'error') console.error(entry);
+    else if (level === 'warn') console.warn(entry);
+    else console.log(entry);
+  };
+}
+
+/* ─── Sentry (activates only when SENTRY_DSN is set) ────────────── */
+async function captureException(err, ctx = {}) {
+  const dsn = process.env.SENTRY_DSN;
+  if (!dsn) return;
+  try {
+    const url = new URL(dsn);
+    const key = url.username;
+    const projectId = url.pathname.replace(/^\//, '');
+    const endpoint = `${url.protocol}//${url.hostname}/api/${projectId}/store/`;
+    await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Sentry-Auth': `Sentry sentry_version=7, sentry_key=${key}, sentry_client=campusprint-api/1.0`,
+      },
+      body: JSON.stringify({
+        event_id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        level: 'error',
+        platform: 'node',
+        exception: { values: [{ type: err?.name || 'Error', value: err?.message || String(err) }] },
+        extra: ctx,
+        tags: { service: 'send-email', runtime: 'vercel-fluid' },
+      }),
+      signal: AbortSignal.timeout(3000),
+    });
+  } catch { /* never let Sentry errors surface */ }
+}
 
 /* ─── rate limit + idempotency (in-memory; per warm instance) ───
  * Fluid Compute reuses instances across concurrent requests, so a Map
@@ -242,6 +283,10 @@ function bodyBulk(e) {
 
 /* ─── handler ───────────────────────────────────────────────────── */
 module.exports = async function handler(req, res) {
+  const requestId = crypto.randomBytes(4).toString('hex').toUpperCase();
+  const log = makeLogger(requestId);
+  res.setHeader('X-Request-Id', requestId);
+
   // CORS — env allowlist, fail closed
   const rawAllow = process.env.ALLOWED_ORIGINS || '';
   const allowList = rawAllow.split(',').map(s => s.trim()).filter(Boolean);
@@ -259,11 +304,11 @@ module.exports = async function handler(req, res) {
   const RESEND_FROM    = process.env.RESEND_FROM;
   const OPERATOR_EMAIL = process.env.OPERATOR_EMAIL;
   if (!RESEND_API_KEY || !RESEND_FROM || !OPERATOR_EMAIL) {
-    console.error('config missing: RESEND_API_KEY / RESEND_FROM / OPERATOR_EMAIL');
+    log('error', 'config_missing', { missing: [!RESEND_API_KEY&&'RESEND_API_KEY', !RESEND_FROM&&'RESEND_FROM', !OPERATOR_EMAIL&&'OPERATOR_EMAIL'].filter(Boolean) });
     return res.status(500).json({ error: 'service_unavailable' });
   }
   if (RESEND_FROM.includes('onboarding@resend.dev')) {
-    console.error('RESEND_FROM is the shared Resend sandbox sender — refusing to send.');
+    log('error', 'sandbox_sender_rejected');
     return res.status(500).json({ error: 'service_misconfigured' });
   }
 
@@ -279,6 +324,7 @@ module.exports = async function handler(req, res) {
   // have one (cheap to roll IPs), otherwise by IP.
   const rlKey = verified ? `u:${verified.email}` : `ip:${clientIp(req)}`;
   if (rateLimitHit(rlKey)) {
+    log('warn', 'rate_limited', { rlKey, authenticated: !!verified });
     res.setHeader('Retry-After', '60');
     return res.status(429).json({ error: 'rate_limited' });
   }
@@ -290,7 +336,7 @@ module.exports = async function handler(req, res) {
 
   if (type === 'print_job') {
     const err = validatePrintJob(data);
-    if (err) { console.warn('print_job validation:', err); return res.status(400).json({ error: 'invalid_payload' }); }
+    if (err) { log('warn', 'validation_failed', { type, err }); return res.status(400).json({ error: 'invalid_payload' }); }
     const e = escapeAll(data, ['jobNum','location','studentId','fileName','copies','paper','sides','email','phone','collectBy']);
     operatorSubject = `New Print Job ${e.jobNum} — ${e.location}${verified ? ' ✓' : ''}`;
     operatorBody    = bodyPrintJob(e);
@@ -300,25 +346,25 @@ module.exports = async function handler(req, res) {
 
   } else if (type === 'topup_request') {
     const err = validateTopUp(data);
-    if (err) { console.warn('topup_request validation:', err); return res.status(400).json({ error: 'invalid_payload' }); }
+    if (err) { log('warn', 'validation_failed', { type, err }); return res.status(400).json({ error: 'invalid_payload' }); }
     const e = escapeAll(data, ['amount','studentId','email','reason']);
     operatorSubject = `Top-up Request — ${e.amount} pages — ${e.studentId}${verified ? ' ✓' : ''}`;
     operatorBody    = bodyTopUp(e);
     customerSubject = `CampusPrint: Top-up request received`;
     customerBody    = SHELL_OPEN +
-      `<p style="color:#999;font-size:11px;margin:0;font-family:monospace">We've received your top-up request</p></div>
+      `<p style="color:#0e4a26;font-size:11px;margin:0 0 16px;font-family:monospace;text-transform:uppercase;letter-spacing:0.1em">We've received your top-up request</p>
       <p style="font-size:14px;color:#1d211b;line-height:1.55">Hi there — your request for <strong>${e.amount} additional pages</strong> has been sent to your institution's bursary office. You'll receive a confirmation within 24 hours.</p>` + SHELL_CLOSE;
     customerEmail   = verified ? verified.email : null;
 
   } else if (type === 'bulk_request') {
     const err = validateBulk(data);
-    if (err) { console.warn('bulk_request validation:', err); return res.status(400).json({ error: 'invalid_payload' }); }
+    if (err) { log('warn', 'validation_failed', { type, err }); return res.status(400).json({ error: 'invalid_payload' }); }
     const e = escapeAll(data, ['lecturerId','courseCode','copies','finishing','deliver','email']);
     operatorSubject = `Bulk Handout — ${e.courseCode} — ${e.copies} copies${verified ? ' ✓' : ''}`;
     operatorBody    = bodyBulk(e);
     customerSubject = `CampusPrint: Bulk handout request received`;
     customerBody    = SHELL_OPEN +
-      `<p style="color:#999;font-size:11px;margin:0;font-family:monospace">We've received your bulk handout request</p></div>
+      `<p style="color:#0e4a26;font-size:11px;margin:0 0 16px;font-family:monospace;text-transform:uppercase;letter-spacing:0.1em">We've received your bulk handout request</p>
       <p style="font-size:14px;color:#1d211b;line-height:1.55">Thanks — your request for <strong>${e.copies} copies</strong> of <strong>${e.courseCode}</strong> with <strong>${e.finishing}</strong>, delivered to <strong>${e.deliver}</strong>, is queued. Operations will confirm by email before the deadline.</p>` + SHELL_CLOSE;
     customerEmail   = verified ? verified.email : null;
 
@@ -350,25 +396,27 @@ module.exports = async function handler(req, res) {
 
     const operatorRes = await sendOne(OPERATOR_EMAIL, operatorSubject, operatorBody);
     if (!operatorRes.ok) {
-      console.error('resend operator send failed:', operatorRes.status, await operatorRes.text());
+      const body = await operatorRes.text();
+      log('error', 'resend_operator_failed', { status: operatorRes.status, resendBody: body.slice(0, 200) });
       return res.status(502).json({ error: 'email_send_failed' });
     }
 
     if (customerEmail && customerEmail !== OPERATOR_EMAIL) {
       const customerRes = await sendOne(customerEmail, customerSubject, customerBody);
       if (!customerRes.ok) {
-        console.warn('resend customer send failed (non-fatal):',
-                     customerRes.status, await customerRes.text());
+        log('warn', 'resend_customer_failed_nonfatal', { status: customerRes.status });
       }
     }
 
     const result = await operatorRes.json();
+    log('info', 'email_sent', { type, resendId: result.id, authenticated: !!verified });
     const response = { success: true, id: result.id };
     idempotencyStore(idemKey, response);
     return res.status(200).json(response);
   } catch (err) {
     const isTimeout = err && (err.name === 'TimeoutError' || err.name === 'AbortError');
-    console.error('email handler error:', err);
+    log('error', isTimeout ? 'upstream_timeout' : 'unhandled_error', { message: err?.message });
+    await captureException(err, { requestId, type });
     return res.status(isTimeout ? 504 : 500).json({ error: isTimeout ? 'upstream_timeout' : 'internal_error' });
   }
 };
