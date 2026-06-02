@@ -978,8 +978,17 @@ dialog.modal::backdrop {
   </div>
 </footer>
 
+<!-- Supabase client — self-hosted (no third-party CDN) + Subresource Integrity.
+     Pinned to 2.45.4; regenerate the hash if you bump the version:
+       openssl dgst -sha384 -binary <file> | openssl base64 -A -->
+<script
+  src="assets/vendor/supabase-js@2.45.4.umd.js"
+  integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o"></script>
+
 <script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
+// Classic UMD script above runs before this deferred module, so the global
+// is available here. Self-hosting means CSP no longer needs to trust esm.sh.
+const { createClient } = window.supabase;
 
 /* ════════════════════════════════════════════════════════════════
  *  CampusPrint — single-file app
