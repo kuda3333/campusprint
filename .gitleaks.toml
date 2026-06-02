@@ -1,0 +1,24 @@
+# gitleaks configuration for CampusPrint
+# Extends the built-in default ruleset, then allowlists known-public values
+# so the secret scan stays green on intentional, non-secret tokens while still
+# catching real leaks (service_role keys, RESEND_API_KEY, webhook secrets, etc.).
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Intentional, non-secret values that the default ruleset flags as false positives."
+
+# Files that only ever contain public or placeholder values.
+paths = [
+  '''\.env\.example$''',     # keys + dummy placeholders only, never real values
+  '''\.gitleaks\.toml$''',   # this file
+]
+
+# The Supabase ANON key is a PUBLIC token (role: "anon") that ships to the
+# browser by design — authorization is enforced by Row-Level Security, not by
+# keeping this key secret. It is the only JWT allowed to live in the repo.
+# A service_role JWT (role: "service_role") must NEVER be allowlisted.
+regexes = [
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZnhxdm5udWZ2Z2d4YmlhaHpxIiwicm9sZSI6ImFub24i[A-Za-z0-9_.\-]+''',
+]

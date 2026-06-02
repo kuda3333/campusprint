@@ -282,7 +282,7 @@ function bodyBulk(e) {
 }
 
 /* ─── handler ───────────────────────────────────────────────────── */
-module.exports = async function handler(req, res) {
+async function handler(req, res) {
   const requestId = crypto.randomBytes(4).toString('hex').toUpperCase();
   const log = makeLogger(requestId);
   res.setHeader('X-Request-Id', requestId);
@@ -419,4 +419,19 @@ module.exports = async function handler(req, res) {
     await captureException(err, { requestId, type });
     return res.status(isTimeout ? 504 : 500).json({ error: isTimeout ? 'upstream_timeout' : 'internal_error' });
   }
-};
+}
+
+/* ─── exports ───────────────────────────────────────────────────────
+ * The Vercel runtime invokes the default export (the handler). The pure
+ * helpers are attached so the test suite (test/send-email.test.js) can
+ * exercise them in isolation without booting the HTTP layer. */
+module.exports = handler;
+module.exports.escapeHtml = escapeHtml;
+module.exports.looksLikeEmail = looksLikeEmail;
+module.exports.isAllowedOrigin = isAllowedOrigin;
+module.exports.clean = clean;
+module.exports.escapeAll = escapeAll;
+module.exports.payloadFingerprint = payloadFingerprint;
+module.exports.validatePrintJob = validatePrintJob;
+module.exports.validateTopUp = validateTopUp;
+module.exports.validateBulk = validateBulk;

@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "vercel dev",
+    "test": "node --test",
     "deploy:preview": "vercel deploy",
     "deploy:prod": "vercel deploy --prod"
   }

@@ -1864,11 +1864,11 @@ const Services = {
       <div class="legal">
         <p>By submitting a print request you agree to the following:</p>
         <ol class="legal__list">
-          <li><strong>Non-refundable.</strong> Prints are non-refundable once submitted. Review your file, page count, paper type, and sides before submitting.</li>
+          <li><strong>Review before submitting.</strong> Once a job is submitted it is released to the kiosk for printing and cannot be recalled. Check your file, page count, paper type, and sides before submitting.</li>
           <li><strong>Collection window.</strong> Prints must be collected from the chosen kiosk within <strong>2 hours</strong> of submission. Uncollected jobs may be discarded.</li>
           <li><strong>File compatibility.</strong> CampusPrint is not liable for files that fail to render correctly on the kiosk printer (corrupt PDFs, unsupported fonts, oversized images, etc.). Test prints are available at every kiosk.</li>
           <li><strong>Content responsibility.</strong> You are responsible for the legality and copyright status of the documents you submit. Do not submit material you do not have the right to print.</li>
-          <li><strong>Service availability.</strong> Kiosks are subject to consumable stock (paper, toner) and may be temporarily unavailable. Where a kiosk cannot fulfil a job, CampusPrint will reverse any associated charge through your institution's billing arrangement.</li>
+          <li><strong>Service availability.</strong> Kiosks are subject to consumable stock (paper, toner) and may be temporarily unavailable. Printing is provided under your institution's existing print agreement — CampusPrint does not collect payment from students directly. Where a kiosk cannot fulfil a job, contact campus print operations.</li>
           <li><strong>Pre-alpha.</strong> CampusPrint is currently in pre-alpha and is offered without warranty. See the open-source repository for the current security and reliability posture.</li>
         </ol>
         <p class="legal__contact">Questions? <a href="mailto:hello@campusprint.zw">hello@campusprint.zw</a></p>
@@ -1883,12 +1883,12 @@ const Services = {
         <h4 class="legal__h">What we collect</h4>
         <ul class="legal__list">
           <li>Your student ID, email address, and phone number, only when you submit a print job, top-up request, or bulk handout request.</li>
-          <li>The file you upload (name and contents) — used solely to render the printed output at the chosen kiosk.</li>
+          <li>The <strong>name</strong> of the file you select — the current build records file metadata only and does not upload or store the file's contents.</li>
           <li>Job metadata: which university, kiosk, copy count, paper type, and timestamp.</li>
         </ul>
         <h4 class="legal__h">How we use it</h4>
         <ul class="legal__list">
-          <li>To produce your prints at the kiosk you select.</li>
+          <li>To produce your prints at the kiosk you select. Your file's contents are sent directly to your institution's print server at print time and are not stored by CampusPrint.</li>
           <li>To send job-confirmation emails to your verified address (signed-in users only).</li>
           <li>To notify campus print operations of incoming jobs.</li>
           <li>To show you your own print history (signed-in users; visible only to you).</li>

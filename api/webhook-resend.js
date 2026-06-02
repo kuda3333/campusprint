@@ -39,7 +39,7 @@ function log(level, event, ctx = {}) {
   else console.log(entry);
 }
 
-module.exports = async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   const secret = process.env.RESEND_WEBHOOK_SECRET;
@@ -76,4 +76,8 @@ module.exports = async function handler(req, res) {
   }
 
   return res.status(200).json({ received: true });
-};
+}
+
+// Default export = Vercel handler; verifySignature exported for the test suite.
+module.exports = handler;
+module.exports.verifySignature = verifySignature;

@@ -61,6 +61,31 @@ sole backend (migrations 001–003). **Action required outside this repo:** dele
 the legacy Firebase project, or rotate its API key and lock all rules to
 `allow read, write: if false;`, then deauthorise its OAuth clients.
 
+## Playbook audit follow-ups (2026-06-02)
+
+Ran the Secure Build Master Playbook against the repo and closed three of its
+hard-gate (§14/§9/§12/§15) gaps:
+
+- **Automated tests (§14 P0).** Added a zero-dependency `node:test` suite under
+  `test/` covering the `send-email` validators, `escapeHtml`/CORS allowlist logic,
+  idempotency fingerprinting, and the Resend webhook's Svix signature verification
+  (valid / tampered / wrong-secret / stale-timestamp / missing-header). Run with
+  `npm test`. The pure helpers in `api/send-email.js` and `api/webhook-resend.js`
+  are now exported for testability without changing the Vercel handler contract.
+- **CI gate + secret scanning (§9/§12 P0).** Added `.github/workflows/ci.yml`:
+  runs `npm test` and a **gitleaks** secret scan on every PR and push. The
+  `.gitleaks.toml` allowlists only the public anon Supabase JWT and `.env.example`
+  placeholders — a `service_role` key would still trip the scan.
+- **Privacy/T&C copy accuracy (§15 P0).** The Privacy Notice previously claimed it
+  collected file *contents*; corrected to state the build records file *metadata
+  (name) only*. T&C "non-refundable / reverse any charge" language (a Path-A relic)
+  was rewritten to match Path B, where students are not billed per job.
+
+Still open from this audit: automated DB backups + tested restore (§7/§13 P0 —
+needs Supabase Pro/PITR, dashboard action), and SRI/self-hosting the Supabase
+client bundle (§4 P1 — true SRI isn't possible on an ESM `import`; mitigated today
+only by version pinning).
+
 ## IMMEDIATE STOP — fixes landed across commits
 
 | # | Item | File | Status |
@@ -104,6 +129,31 @@ The function will return `500 service_unavailable` until these are set in Vercel
 | V20 | MED | ~~No observability — `console.error` only~~ | ✅ Structured JSON logs + `requestId` per request + optional Sentry (`SENTRY_DSN` env var) landed 2026-05-19 |
 | V21 | MED | ~~No Resend bounce webhook~~ | ✅ `/api/webhook-resend.js` with Svix signature verification landed 2026-05-19. **Action:** add endpoint in Resend dashboard + set `RESEND_WEBHOOK_SECRET` env var |
 | V22 | LOW | CSP still allows `'unsafe-inline'` for scripts (inline `onclick` handlers + module script) | Extract inline handlers, switch to nonce-based CSP |
+| V23 | MED (accepted) | Supabase session tokens persist in `localStorage` (XSS-readable) — a deviation from the playbook §3 / Appendix C "no tokens in localStorage" rule | Accepted trade-off for a static SPA — see *Session-token storage decision* below. Revisit if a server framework is adopted. |
+
+## Session-token storage decision (V23 — accepted trade-off)
+
+The playbook (§3 "Sessions & tokens", Appendix C) says never store auth tokens in
+`localStorage`/`sessionStorage` because an XSS bug can exfiltrate them. CampusPrint's
+front-end is a **static single-page app** loaded straight from Vercel's CDN with no
+server framework, so the standard `@supabase/supabase-js` client persists the session
+in `localStorage` (its default). The cookie-based alternative (`HttpOnly` refresh
+cookie + access token in memory) requires server-side session handling
+(`@supabase/ssr` inside Next.js/SvelteKit/etc.), which this build does not have.
+
+**Decision:** accept `localStorage` storage for now, mitigated by:
+
+- A **strict CSP** ([vercel.json](vercel.json)) with no `'unsafe-eval'`, a locked
+  `script-src`/`connect-src` allowlist, and `object-src 'none'` — the primary XSS
+  containment. (Tightening the remaining `'unsafe-inline'` is tracked as V22.)
+- **Consistent output-encoding** via `esc()` on every `innerHTML` sink (the only XSS
+  entry points), so there is no known script-injection path to abuse the tokens.
+- **Short-lived access tokens with refresh rotation** (Supabase default).
+- A **pinned** Supabase client (`@2.45.4`) to blunt CDN supply-chain risk.
+
+**Revisit trigger:** the moment this app gains a server framework (e.g. migrating the
+static page into Next.js for the operator dashboard), switch to `@supabase/ssr`
+cookie-based storage and remove this exception.
 
 ## Infrastructure checklist (manual — requires dashboard access)
 
