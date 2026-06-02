@@ -81,10 +81,16 @@ hard-gate (§14/§9/§12/§15) gaps:
   (name) only*. T&C "non-refundable / reverse any charge" language (a Path-A relic)
   was rewritten to match Path B, where students are not billed per job.
 
+- **Subresource Integrity / self-hosting (§4 P1).** The Supabase client was
+  loaded from `esm.sh` via an ESM `import` (no integrity possible). Replaced with
+  the self-contained UMD build vendored at
+  `assets/vendor/supabase-js@2.45.4.umd.js`, loaded as a classic script with a
+  SHA-384 `integrity` attribute. CSP tightened accordingly — `esm.sh` removed from
+  `script-src`/`connect-src`. Regenerate the hash on version bumps:
+  `openssl dgst -sha384 -binary <file> | openssl base64 -A`.
+
 Still open from this audit: automated DB backups + tested restore (§7/§13 P0 —
-needs Supabase Pro/PITR, dashboard action), and SRI/self-hosting the Supabase
-client bundle (§4 P1 — true SRI isn't possible on an ESM `import`; mitigated today
-only by version pinning).
+needs Supabase Pro/PITR, a dashboard action, not code).
 
 ## IMMEDIATE STOP — fixes landed across commits
 
